@@ -19,15 +19,7 @@ export default function Navbar() {
         Lemonject
       </Link>
 
-      {/* Desktop Navigation Links - Centered */}
       <div className="hidden md:flex space-x-6 justify-center w-full">
-        <a
-          href="#features"
-          className="text-xl text-gray-800 hover:text-green-600 transition-colors"
-        >
-          Features
-        </a>
-        {/* Updated the About link to point to the /about page */}
         <Link
           href="/about"
           className="text-xl text-gray-800 hover:text-green-600 transition-colors"
@@ -35,10 +27,22 @@ export default function Navbar() {
           About
         </Link>
         <Link
-          href="/dashboard"
+          href="/"
           className="text-xl text-gray-800 hover:text-green-600 transition-colors"
         >
           Dashboard
+        </Link>
+        <Link
+          href="/predictor"
+          className="text-xl text-gray-800 hover:text-green-600 transition-colors"
+        >
+          ML Predictor
+        </Link>
+        <Link
+          href="/"
+          className="text-xl text-gray-800 hover:text-green-600 transition-colors"
+        >
+          Docs
         </Link>
       </div>
 

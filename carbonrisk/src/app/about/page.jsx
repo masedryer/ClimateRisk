@@ -5,60 +5,78 @@ import { Container, Grid, Typography, Button, Box, Paper } from "@mui/material";
 import { styled } from "@mui/system";
 import SectionHeader from "@/components/ui/SectionHeader";
 
-// Custom styled components for layout
 const HeroSection = styled(Box)(({ theme }) => ({
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
   padding: theme.spacing(6),
-  backgroundColor: theme.palette.background.paper,
+  backgroundColor: theme.palette.grey[100],
   borderRadius: 12,
-  marginBottom: theme.spacing(6),
+  width: "100%",
+  [theme.breakpoints.down("md")]: {
+    flexDirection: "column", // Stack vertically on smaller screens
+    padding: theme.spacing(4),
+  },
+}));
+
+const HeroWrapper = styled(Box)(({ theme }) => ({
+  backgroundColor: theme.palette.grey[100],
+  width: "100vw",
+  position: "relative",
+  left: "50%",
+  right: "50%",
+  marginLeft: "-50vw",
+  marginRight: "-50vw",
+  boxSizing: "border-box",
+  paddingRight: theme.spacing(6),
+  paddingLeft: theme.spacing(6),
+}));
+
+const HeroImage = styled(Box)(({ theme }) => ({
+  maxWidth: "85%",
+  backgroundImage: 'url("/heroimage.png")',
+  backgroundSize: "cover",
+  backgroundPosition: "center",
+  height: 500,
+  borderRadius: 12,
+  width: "100%",
 }));
 
 const HeroText = styled(Box)(({ theme }) => ({
   maxWidth: "50%",
-  paddingRight: theme.spacing(4), // Added consistent padding
-}));
-
-const HeroImage = styled(Box)(({ theme }) => ({
-  maxWidth: "45%",
-  backgroundImage: "url(/path/to/your/hero-image.jpg)", // Hero image placeholder
-  backgroundSize: "cover",
-  backgroundPosition: "center",
-  height: 400,
-  borderRadius: 12,
-  width: "100%",
-  padding: theme.spacing(2), // Added padding for consistency
+  paddingRight: theme.spacing(4),
 }));
 
 const Section = styled(Paper)(({ theme }) => ({
   backgroundColor: theme.palette.background.paper,
-  padding: theme.spacing(6),
+  padding: theme.spacing(4),
   borderRadius: 16,
   boxShadow: theme.shadows[3],
   marginBottom: theme.spacing(6),
+  width: "100%",
+  maxWidth: "100%",
 }));
 
 const SubSection = styled(Box)(({ theme }) => ({
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
-  padding: theme.spacing(2), // Added padding for consistency
+  padding: theme.spacing(2),
   marginBottom: theme.spacing(6),
+  width: "100%",
 }));
 
 const ImagePlaceholder = styled(Box)(({ theme }) => ({
   backgroundColor: theme.palette.grey[200],
-  height: 400, // Adjusted to fixed height
-  width: 600, // Fixed width for consistent sizing
+  height: 400,
+  width: 600,
   borderRadius: 12,
   marginLeft: theme.spacing(4),
   flex: "0 1 45%",
-  backgroundImage: "url(/path/to/image.jpg)", // Image placeholder
+  backgroundImage: "url(/path/to/image.jpg)",
   backgroundSize: "cover",
   backgroundPosition: "center",
-  padding: theme.spacing(2), // Added padding for consistency
+  padding: theme.spacing(2),
 }));
 
 const MissionSection = styled(Box)(({ theme }) => ({
@@ -66,22 +84,22 @@ const MissionSection = styled(Box)(({ theme }) => ({
   justifyContent: "space-between",
   alignItems: "center",
   marginTop: theme.spacing(6),
-  padding: theme.spacing(2), // Added padding for consistency
+  padding: theme.spacing(2),
 }));
 
 const About = () => {
   return (
     <div>
-      <Container maxWidth="lg">
-        {/* Hero Section */}
+      <HeroWrapper>
         <HeroSection>
           <HeroText>
             <Typography variant="h2" component="h1" gutterBottom>
-              Satellite Image Prediction
+              Carbon Credit Risk Project
             </Typography>
             <Typography variant="h5" paragraph>
-              Experience the power of data science with our machine learning
-              project, turning complex data into actionable insights.
+              Experience the power of machine learning with templates that you
+              can use for your project, turning complex data into actionable
+              insights.
             </Typography>
             <Button variant="contained" color="primary" size="large">
               Learn More
@@ -89,8 +107,9 @@ const About = () => {
           </HeroText>
           <HeroImage />
         </HeroSection>
+      </HeroWrapper>
 
-        {/* Project Risks */}
+      <Container maxWidth={false}>
         <Section>
           <SectionHeader
             title="Amount of Project Risks"
@@ -111,7 +130,6 @@ const About = () => {
           </SubSection>
         </Section>
 
-        {/* Project Recommendations */}
         <Section>
           <SectionHeader
             title="Project Recommendations"
@@ -131,7 +149,6 @@ const About = () => {
           </SubSection>
         </Section>
 
-        {/* Machine Learning Insights */}
         <Section>
           <SectionHeader
             title="Machine Learning Insights"
@@ -152,7 +169,6 @@ const About = () => {
           </SubSection>
         </Section>
 
-        {/* Mission Section */}
         <MissionSection>
           <Box>
             <ImagePlaceholder />
