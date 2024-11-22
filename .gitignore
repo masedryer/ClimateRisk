@@ -1,1 +1,12 @@
-carbonrisk/.git/
+ Ignore Firebase service account key and other sensitive files
+/config/firebase-service-account-key.json
+
+# Ignore .env files to prevent exposing environment variables
+
+
+# Node.js dependencies
+node_modules/
+
+# Next.js build outputs
+.next/
+config/
