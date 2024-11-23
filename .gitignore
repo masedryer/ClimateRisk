@@ -10,3 +10,4 @@ node_modules/
 # Next.js build outputs
 .next/
 config/
+fastapi-backend/
