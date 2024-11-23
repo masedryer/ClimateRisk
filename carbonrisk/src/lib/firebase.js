@@ -1,7 +1,6 @@
 // Import necessary Firebase functions from Firebase SDK v9+ (modular SDK)
 import { initializeApp, getApps } from "firebase/app";
 import { getFirestore, collection, getDocs, addDoc } from "firebase/firestore";
-import { useEffect, useState } from "react";
 
 // Firebase config object with environment variables
 const firebaseConfig = {
