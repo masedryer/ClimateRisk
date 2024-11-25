@@ -1,9 +1,21 @@
 "use client"; // Ensure this is at the top for Client Component
 
 import React from "react";
-import { Container, Grid, Typography, Button, Box, Paper } from "@mui/material";
+import { Container, Typography, Button, Box } from "@mui/material";
 import { styled } from "@mui/system";
 import SectionHeader from "@/components/ui/SectionHeader";
+import Mission from "@/components/ui/Mission"; // Make sure the import path is correct
+
+const Section = styled(Box)(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  padding: theme.spacing(4, 0),
+  width: "100%",
+  [theme.breakpoints.down("md")]: {
+    flexDirection: "column", // Stack vertically on smaller screens
+  },
+}));
 
 const HeroSection = styled(Box)(({ theme }) => ({
   display: "flex",
@@ -47,49 +59,27 @@ const HeroText = styled(Box)(({ theme }) => ({
   paddingRight: theme.spacing(4),
 }));
 
-const Section = styled(Paper)(({ theme }) => ({
-  backgroundColor: theme.palette.background.paper,
-  padding: theme.spacing(4),
-  borderRadius: 16,
-  boxShadow: theme.shadows[3],
-  marginBottom: theme.spacing(6),
-  width: "100%",
-  maxWidth: "100%",
-}));
-
-const SubSection = styled(Box)(({ theme }) => ({
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  padding: theme.spacing(2),
-  marginBottom: theme.spacing(6),
-  width: "100%",
-}));
-
 const ImagePlaceholder = styled(Box)(({ theme }) => ({
   backgroundColor: theme.palette.grey[200],
-  height: 400,
-  width: 600,
+  height: 300,
+  width: 400,
   borderRadius: 12,
-  marginLeft: theme.spacing(4),
-  flex: "0 1 45%",
   backgroundImage: "url(/path/to/image.jpg)",
   backgroundSize: "cover",
   backgroundPosition: "center",
-  padding: theme.spacing(2),
 }));
 
-const MissionSection = styled(Box)(({ theme }) => ({
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  marginTop: theme.spacing(6),
-  padding: theme.spacing(2),
+const ContentBox = styled(Box)(({ theme }) => ({
+  maxWidth: "50%",
+  [theme.breakpoints.down("md")]: {
+    maxWidth: "100%",
+  },
 }));
 
 const About = () => {
   return (
     <div>
+      {/* Hero Section */}
       <HeroWrapper>
         <HeroSection>
           <HeroText>
@@ -109,83 +99,65 @@ const About = () => {
         </HeroSection>
       </HeroWrapper>
 
-      <Container maxWidth={false}>
+      <Container maxWidth="lg">
+        {/* First Section */}
         <Section>
-          <SectionHeader
-            title="Amount of Project Risks"
-            subtitle="Data Visualization"
-          />
-          <SubSection>
-            <Box>
-              <Typography variant="h5" gutterBottom>
-                Discover the distribution of project risks through our intuitive
-                pie chart visualization, tailored to your specific data science
-                needs.
-              </Typography>
-              <Button variant="contained" color="secondary" size="large">
-                Learn More
-              </Button>
-            </Box>
-            <ImagePlaceholder />
-          </SubSection>
-        </Section>
-
-        <Section>
-          <SectionHeader
-            title="Project Recommendations"
-            subtitle="Smart Solutions"
-          />
-          <SubSection>
-            <Box>
-              <Typography variant="h5" gutterBottom>
-                Based on data-driven analysis, we recommend project paths that
-                help mitigate risks and optimize success.
-              </Typography>
-              <Button variant="contained" color="primary" size="large">
-                Learn More
-              </Button>
-            </Box>
-            <ImagePlaceholder />
-          </SubSection>
-        </Section>
-
-        <Section>
-          <SectionHeader
-            title="Machine Learning Insights"
-            subtitle="Advanced Analytics"
-          />
-          <SubSection>
-            <ImagePlaceholder />
-            <Box>
-              <Typography variant="h5" gutterBottom>
-                By leveraging the power of machine learning and predictive
-                analytics, we've identified key risks and recommended projects
-                that can optimize your data science initiatives.
-              </Typography>
-              <Button variant="contained" color="secondary" size="large">
-                Learn More
-              </Button>
-            </Box>
-          </SubSection>
-        </Section>
-
-        <MissionSection>
-          <Box>
-            <ImagePlaceholder />
-            <ImagePlaceholder />
-          </Box>
-          <Box>
-            <Typography variant="h4" component="h2" gutterBottom>
-              Our Mission
+          <ImagePlaceholder />
+          <ContentBox>
+            <Typography variant="h5" gutterBottom>
+              Amount of Project Risks
             </Typography>
             <Typography variant="body1" paragraph>
-              At the heart of our machine learning project is a commitment to
-              revolutionizing how organizations handle data and project risk. We
-              provide the tools and insights necessary to make smarter,
-              data-driven decisions.
+              Discover the distribution of project risks through our intuitive
+              pie chart visualization, tailored to your specific data science
+              needs.
             </Typography>
-          </Box>
-        </MissionSection>
+            <Button variant="contained" color="secondary" size="large">
+              Learn More
+            </Button>
+          </ContentBox>
+        </Section>
+
+        {/* Second Section */}
+        <Section>
+          <ContentBox>
+            <Typography variant="h5" gutterBottom>
+              Project Recommendations
+            </Typography>
+            <Typography variant="body1" paragraph>
+              Based on data-driven analysis, we recommend project paths that
+              help mitigate risks and optimize success.
+            </Typography>
+            <Button variant="contained" color="primary" size="large">
+              Learn More
+            </Button>
+          </ContentBox>
+          <ImagePlaceholder />
+        </Section>
+
+        {/* Third Section */}
+        <Section>
+          <ImagePlaceholder />
+          <ContentBox>
+            <Typography variant="h5" gutterBottom>
+              Machine Learning Insights
+            </Typography>
+            <Typography variant="body1" paragraph>
+              By leveraging the power of machine learning and predictive
+              analytics, we've identified key risks and recommended projects
+              that can optimize your data science initiatives.
+            </Typography>
+            <Button variant="contained" color="secondary" size="large">
+              Learn More
+            </Button>
+          </ContentBox>
+        </Section>
+
+        {/* Mission Section */}
+        <Mission 
+          src="/missionImage.svg"  // Make sure this path is correct
+          title="Mission Image"     // Ensure this title matches your content
+        />
       </Container>
     </div>
   );
