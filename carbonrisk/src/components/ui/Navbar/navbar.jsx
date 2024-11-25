@@ -39,6 +39,12 @@ export default function Navbar() {
           ML Predictor
         </Link>
         <Link
+          href="/predictor2"
+          className="text-xl text-gray-800 hover:text-green-600 transition-colors"
+        >
+          Predictor2
+        </Link>
+        <Link
           href="/"
           className="text-xl text-gray-800 hover:text-green-600 transition-colors"
         >
