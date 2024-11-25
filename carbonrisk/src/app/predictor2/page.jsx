@@ -1,71 +1,29 @@
 "use client";
-// Import necessary libraries
-import React, { useState, useEffect } from "react";
+
+import { useState, useEffect } from "react";
 import Select from "react-select";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { ClipLoader } from "react-spinners"; // For loading spinner
 
-// Status options
-const statusOptions = [
-  {
-    label: "Crediting Period Renewal and Verification Approval Requested",
-    value: "Crediting Period Renewal and Verification Approval Requested",
-  },
-  { label: "Inactive", value: "Inactive" },
-  { label: "Late to verify", value: "Late to verify" },
-  {
-    label: "On Hold - see notification letter",
-    value: "On Hold - see notification letter",
-  },
-  { label: "Registered", value: "Registered" },
-  {
-    label: "Registration and verification approval request denied",
-    value: "Registration and verification approval request denied",
-  },
-  {
-    label: "Registration and verification approval requested",
-    value: "Registration and verification approval requested",
-  },
-  {
-    label: "Registration request denied",
-    value: "Registration request denied",
-  },
-  { label: "Registration requested", value: "Registration requested" },
-  { label: "Rejected by Administrator", value: "Rejected by Administrator" },
-  { label: "Under development", value: "Under development" },
-  { label: "Under validation", value: "Under validation" },
-  {
-    label: "Units Transferred from Approved GHG Program",
-    value: "Units Transferred from Approved GHG Program",
-  },
-  {
-    label: "Verification approval request denied",
-    value: "Verification approval request denied",
-  },
-  {
-    label: "Verification approval requested",
-    value: "Verification approval requested",
-  },
-  { label: "Withdrawn", value: "Withdrawn" },
-];
 
-export default function Predictor() {
+
+export default function FormComponent() {
   const [countries, setCountries] = useState([]);
-  const [selectedStatus, setSelectedStatus] = useState(null);
   const [selectedCountry, setSelectedCountry] = useState(null);
   const [startDate, setStartDate] = useState(null);
-  const [endDate, setEndDate] = useState(null);
   const [carbonEmission, setCarbonEmission] = useState("");
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [output, setOutput] = useState(null);
 
-  // Fetch country data
   useEffect(() => {
     async function fetchCountries() {
       try {
         const response = await fetch("https://restcountries.com/v3.1/all");
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
         const data = await response.json();
         const countryOptions = data.map((country) => ({
           label: country.name.common,
@@ -81,116 +39,101 @@ export default function Predictor() {
     fetchCountries();
   }, []);
 
-  // Handle form submission
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Simulate an API call delay
-    setTimeout(() => {
-      setOutput("75% risk"); // Placeholder output
+    const requestData = {
+      Year: startDate ? startDate.getFullYear() : 2018,
+      Country_Name: selectedCountry ? selectedCountry.value : "Albania",
+      NDVI: 0.53555,
+      MtCo2: parseFloat(carbonEmission),
+      NightLight: 1.213880,
+      Land_Use_Tgc: -0.28354,
+      percipitation_winter: 450.63,
+      percipitation_summer: 188.06,
+      percipitation_spring: 227.6,
+      percipitation_autumn: 216.03,
+      Max_temperature: 18.07,
+      Mean_temperature: 13.03,
+      Min_temperature: 8.02,
+    };
+
+  
+
+
+    try {
+      const response = await fetch('https://ml-model-v1.onrender.com/predict', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      setOutput(result.prediction_label);
+    } catch (error) {
+      console.error("Error submitting form:", error);
+    } finally {
       setIsSubmitting(false);
-    }, 2000);
+    }
   };
 
   return (
-    <div className="p-8 bg-gray-50 min-h-screen flex justify-center items-center">
-      <div className="max-w-lg w-full bg-white shadow-lg rounded-lg p-6">
-        <h2 className="text-2xl font-semibold text-gray-800 mb-6">
-          Project Risk Predictor
-        </h2>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Status Select */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Status
-            </label>
+    <div>
+      <form onSubmit={handleSubmit}>
+        <div>
+          <label htmlFor="country">Country</label>
+          {loading ? (
+            <ClipLoader size={24} />
+          ) : (
             <Select
-              options={statusOptions}
-              value={selectedStatus}
-              onChange={(option) => setSelectedStatus(option)}
-              placeholder="Select Status"
+              options={countries}
+              onChange={(option) => setSelectedCountry(option)}
+              placeholder="Select Country"
               className="rounded-lg"
             />
-          </div>
-
-          {/* Country Select */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Country
-            </label>
-            {loading ? (
-              <p className="text-gray-500 text-sm">Loading countries...</p>
-            ) : (
-              <Select
-                options={countries}
-                value={selectedCountry}
-                onChange={(option) => setSelectedCountry(option)}
-                placeholder="Select Country"
-                className="rounded-lg"
-              />
-            )}
-          </div>
-
-          {/* Date Pickers */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Credit Period Start
-            </label>
-            <DatePicker
-              selected={startDate}
-              onChange={(date) => setStartDate(date)}
-              placeholderText="Select Start Date"
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Credit Period End
-            </label>
-            <DatePicker
-              selected={endDate}
-              onChange={(date) => setEndDate(date)}
-              placeholderText="Select End Date"
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm"
-            />
-          </div>
-
-          {/* Carbon Emission Input */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Carbon Emission (in tons)
-            </label>
-            <input
-              type="number"
-              value={carbonEmission}
-              onChange={(e) => setCarbonEmission(e.target.value)}
-              placeholder="Enter Carbon Emission"
-              required
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm"
-            />
-          </div>
-
-          {/* Submit Button */}
-          <button
-            type="submit"
-            className="w-full bg-blue-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-700"
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? "Processing..." : "Predict Risk"}
-          </button>
-        </form>
-
-        {/* Loading and Output */}
-        <div className="mt-6 text-center">
-          {isSubmitting && <ClipLoader size={24} color="#2563eb" />}
-          {output && !isSubmitting && (
-            <p className="text-lg font-semibold text-green-600 mt-4">
-              Output: {output}
-            </p>
           )}
         </div>
-      </div>
+        <div>
+        <label htmlFor="startDate">Credit Period Start</label>
+      <DatePicker
+        selected={startDate}
+        onChange={(date) => setStartDate(date)}
+        placeholderText="Select Start Date"
+        className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm"
+        showYearDropdown
+        dateFormat="yyyy"
+      />
+        </div>
+        <div>
+          <label htmlFor="carbonEmission">Carbon Emission (in tons)</label>
+          <input
+            type="text"
+            id="carbonEmission"
+            value={carbonEmission}
+            onChange={(e) => setCarbonEmission(e.target.value)}
+            placeholder="Enter Carbon Emission"
+            required
+            className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm"
+          />
+        </div>
+        <button type="submit" className="mt-4 bg-blue-500 text-white px-4 py-2 rounded-lg">
+          {isSubmitting ? "Processing..." : "Predict Risk"}
+        </button>
+      </form>
+
+      {isSubmitting && <ClipLoader size={24} />}
+      {output && !isSubmitting && (
+        <div className="mt-4">
+          <h3>Output: {output}</h3>
+        </div>
+      )}
     </div>
   );
 }
