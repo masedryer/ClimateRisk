@@ -1,96 +1,283 @@
 "use client";
-// Import necessary libraries
-import React, { useState, useEffect } from "react";
-import Select from "react-select";
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
-import { ClipLoader } from "react-spinners"; // For loading spinner
 
-// Status options
-const statusOptions = [
-  {
-    label: "Crediting Period Renewal and Verification Approval Requested",
-    value: "Crediting Period Renewal and Verification Approval Requested",
-  },
-  { label: "Inactive", value: "Inactive" },
-  { label: "Late to verify", value: "Late to verify" },
-  {
-    label: "On Hold - see notification letter",
-    value: "On Hold - see notification letter",
-  },
-  { label: "Registered", value: "Registered" },
-  {
-    label: "Registration and verification approval request denied",
-    value: "Registration and verification approval request denied",
-  },
-  {
-    label: "Registration and verification approval requested",
-    value: "Registration and verification approval requested",
-  },
-  {
-    label: "Registration request denied",
-    value: "Registration request denied",
-  },
-  { label: "Registration requested", value: "Registration requested" },
-  { label: "Rejected by Administrator", value: "Rejected by Administrator" },
-  { label: "Under development", value: "Under development" },
-  { label: "Under validation", value: "Under validation" },
-  {
-    label: "Units Transferred from Approved GHG Program",
-    value: "Units Transferred from Approved GHG Program",
-  },
-  {
-    label: "Verification approval request denied",
-    value: "Verification approval request denied",
-  },
-  {
-    label: "Verification approval requested",
-    value: "Verification approval requested",
-  },
-  { label: "Withdrawn", value: "Withdrawn" },
+import React, { useState, useEffect } from "react";
+import { ClipLoader } from "react-spinners";
+import CountrySelect from "@/components/ui/CountrySelect";
+import StartDatePicker from "@/components/ui/StartDatePicker";
+import CarbonEmissionInput from "@/components/ui/CarbonEmission";
+
+// Allowed countries list
+const allowedCountries = [
+  "Afghanistan",
+  "Albania",
+  "Algeria",
+  "American Samoa",
+  "Andorra",
+  "Angola",
+  "Antigua and Barbuda",
+  "Argentina",
+  "Armenia",
+  "Aruba",
+  "Australia",
+  "Austria",
+  "Azerbaijan",
+  "Bahamas, The",
+  "Bahrain",
+  "Bangladesh",
+  "Barbados",
+  "Belarus",
+  "Belgium",
+  "Belize",
+  "Benin",
+  "Bermuda",
+  "Bhutan",
+  "Bolivia",
+  "Bosnia and Herzegovina",
+  "Botswana",
+  "Brazil",
+  "British Virgin Islands",
+  "Brunei Darussalam",
+  "Bulgaria",
+  "Burkina Faso",
+  "Burundi",
+  "Cabo Verde",
+  "Cambodia",
+  "Cameroon",
+  "Cayman Islands",
+  "Central African Republic",
+  "Chad",
+  "Channel Islands",
+  "Chile",
+  "China",
+  "Colombia",
+  "Comoros",
+  "Congo, Dem. Rep.",
+  "Congo, Rep.",
+  "Costa Rica",
+  "Cote d'Ivoire",
+  "Croatia",
+  "Cuba",
+  "Curacao",
+  "Cyprus",
+  "Czechia",
+  "Denmark",
+  "Djibouti",
+  "Dominica",
+  "Dominican Republic",
+  "Ecuador",
+  "Egypt, Arab Rep.",
+  "El Salvador",
+  "Equatorial Guinea",
+  "Eritrea",
+  "Estonia",
+  "Eswatini",
+  "Ethiopia",
+  "Faroe Islands",
+  "Fiji",
+  "Finland",
+  "France",
+  "French Polynesia",
+  "Gabon",
+  "Gambia, The",
+  "Georgia",
+  "Germany",
+  "Ghana",
+  "Greece",
+  "Greenland",
+  "Grenada",
+  "Guam",
+  "Guatemala",
+  "Guinea",
+  "Guinea-Bissau",
+  "Guyana",
+  "Haiti",
+  "Honduras",
+  "Hungary",
+  "Iceland",
+  "India",
+  "Indonesia",
+  "Iran, Islamic Rep.",
+  "Iraq",
+  "Ireland",
+  "Isle of Man",
+  "Israel",
+  "Italy",
+  "Jamaica",
+  "Japan",
+  "Jordan",
+  "Kazakhstan",
+  "Kenya",
+  "Kiribati",
+  "Korea, Dem. People's Rep.",
+  "Korea, Rep.",
+  "Kuwait",
+  "Kyrgyz Republic",
+  "Lao PDR",
+  "Latvia",
+  "Lebanon",
+  "Lesotho",
+  "Liberia",
+  "Libya",
+  "Liechtenstein",
+  "Lithuania",
+  "Luxembourg",
+  "Madagascar",
+  "Malawi",
+  "Malaysia",
+  "Maldives",
+  "Mali",
+  "Malta",
+  "Marshall Islands",
+  "Mauritania",
+  "Mauritius",
+  "Mexico",
+  "Micronesia, Fed. Sts.",
+  "Moldova",
+  "Mongolia",
+  "Montenegro",
+  "Morocco",
+  "Mozambique",
+  "Myanmar",
+  "Namibia",
+  "Nepal",
+  "Netherlands",
+  "New Caledonia",
+  "New Zealand",
+  "Nicaragua",
+  "Niger",
+  "Nigeria",
+  "North Macedonia",
+  "Northern Mariana Islands",
+  "Norway",
+  "Oman",
+  "Pakistan",
+  "Palau",
+  "Panama",
+  "Papua New Guinea",
+  "Paraguay",
+  "Peru",
+  "Philippines",
+  "Poland",
+  "Portugal",
+  "Puerto Rico",
+  "Romania",
+  "Russian Federation",
+  "Rwanda",
+  "Samoa",
+  "San Marino",
+  "Sao Tome and Principe",
+  "Saudi Arabia",
+  "Senegal",
+  "Serbia",
+  "Seychelles",
+  "Sierra Leone",
+  "Singapore",
+  "Sint Maarten (Dutch part)",
+  "Slovak Republic",
+  "Slovenia",
+  "Solomon Islands",
+  "Somalia",
+  "South Africa",
+  "South Sudan",
+  "Spain",
+  "Sri Lanka",
+  "St. Kitts and Nevis",
+  "St. Lucia",
+  "St. Martin (French part)",
+  "St. Vincent and the Grenadines",
+  "Sudan",
+  "Suriname",
+  "Sweden",
+  "Switzerland",
+  "Syrian Arab Republic",
+  "Tajikistan",
+  "Tanzania",
+  "Thailand",
+  "Timor-Leste",
+  "Togo",
+  "Tonga",
+  "Trinidad and Tobago",
+  "Tunisia",
+  "Turkiye",
+  "Turkmenistan",
+  "Turks and Caicos Islands",
+  "Tuvalu",
+  "Uganda",
+  "Ukraine",
+  "United Arab Emirates",
+  "United Kingdom",
+
+  "Uruguay",
+  "Uzbekistan",
+  "Vanuatu",
+  "Venezuela, RB",
+  "Viet Nam",
+  "Virgin Islands (U.S.)",
+  "West Bank and Gaza",
+  "Yemen, Rep.",
+  "Zambia",
+  "Zimbabwe",
 ];
 
 export default function Predictor() {
   const [countries, setCountries] = useState([]);
-  const [selectedStatus, setSelectedStatus] = useState(null);
   const [selectedCountry, setSelectedCountry] = useState(null);
   const [startDate, setStartDate] = useState(null);
-  const [endDate, setEndDate] = useState(null);
   const [carbonEmission, setCarbonEmission] = useState("");
-  const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [output, setOutput] = useState(null);
 
-  // Fetch country data
+  // Prepare country options for dropdown
   useEffect(() => {
-    async function fetchCountries() {
-      try {
-        const response = await fetch("https://restcountries.com/v3.1/all");
-        const data = await response.json();
-        const countryOptions = data.map((country) => ({
-          label: country.name.common,
-          value: country.name.common,
-        }));
-        setCountries(countryOptions);
-        setLoading(false);
-      } catch (error) {
-        console.error("Error fetching countries:", error);
-        setLoading(false);
-      }
-    }
-    fetchCountries();
+    const countryOptions = allowedCountries.map((country) => ({
+      label: country,
+      value: country,
+    }));
+    setCountries(countryOptions);
   }, []);
 
   // Handle form submission
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Simulate an API call delay
-    setTimeout(() => {
-      setOutput("75% risk"); // Placeholder output
+    // Prepare data for API request
+    const requestData = {
+      Year: startDate ? startDate.getFullYear() : 2018,
+      Country_Name: selectedCountry ? selectedCountry.value : "Albania",
+      NDVI: 0.53555,
+      MtCo2: parseFloat(carbonEmission),
+      NightLight: 1.21388,
+      Land_Use_Tgc: -0.28354,
+      percipitation_winter: 450.63,
+      percipitation_summer: 188.06,
+      percipitation_spring: 227.6,
+      percipitation_autumn: 216.03,
+      Max_temperature: 18.07,
+      Mean_temperature: 13.03,
+      Min_temperature: 8.02,
+    };
+
+    try {
+      const response = await fetch("https://ml-model-v1.onrender.com/predict", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestData),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      setOutput(result.prediction_label); // Update this according to the actual response format
+    } catch (error) {
+      console.error("Error submitting form:", error);
+    } finally {
       setIsSubmitting(false);
-    }, 2000);
+    }
   };
 
   return (
@@ -100,76 +287,24 @@ export default function Predictor() {
           Project Risk Predictor
         </h2>
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Status Select */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Status
-            </label>
-            <Select
-              options={statusOptions}
-              value={selectedStatus}
-              onChange={(option) => setSelectedStatus(option)}
-              placeholder="Select Status"
-              className="rounded-lg"
-            />
-          </div>
-
           {/* Country Select */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Country
-            </label>
-            {loading ? (
-              <p className="text-gray-500 text-sm">Loading countries...</p>
-            ) : (
-              <Select
-                options={countries}
-                value={selectedCountry}
-                onChange={(option) => setSelectedCountry(option)}
-                placeholder="Select Country"
-                className="rounded-lg"
-              />
-            )}
-          </div>
+          <CountrySelect
+            countries={countries}
+            selectedCountry={selectedCountry}
+            onChange={(option) => setSelectedCountry(option)}
+          />
 
-          {/* Date Pickers */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Credit Period Start
-            </label>
-            <DatePicker
-              selected={startDate}
-              onChange={(date) => setStartDate(date)}
-              placeholderText="Select Start Date"
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Credit Period End
-            </label>
-            <DatePicker
-              selected={endDate}
-              onChange={(date) => setEndDate(date)}
-              placeholderText="Select End Date"
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm"
-            />
-          </div>
+          {/* Start Date Picker */}
+          <StartDatePicker
+            startDate={startDate}
+            onChange={(date) => setStartDate(date)}
+          />
 
           {/* Carbon Emission Input */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Carbon Emission (in tons)
-            </label>
-            <input
-              type="number"
-              value={carbonEmission}
-              onChange={(e) => setCarbonEmission(e.target.value)}
-              placeholder="Enter Carbon Emission"
-              required
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm"
-            />
-          </div>
+          <CarbonEmissionInput
+            carbonEmission={carbonEmission}
+            onChange={(e) => setCarbonEmission(e.target.value)}
+          />
 
           {/* Submit Button */}
           <button

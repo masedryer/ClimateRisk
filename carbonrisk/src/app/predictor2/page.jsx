@@ -6,8 +6,6 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { ClipLoader } from "react-spinners"; // For loading spinner
 
-
-
 export default function FormComponent() {
   const [countries, setCountries] = useState([]);
   const [selectedCountry, setSelectedCountry] = useState(null);
@@ -48,7 +46,7 @@ export default function FormComponent() {
       Country_Name: selectedCountry ? selectedCountry.value : "Albania",
       NDVI: 0.53555,
       MtCo2: parseFloat(carbonEmission),
-      NightLight: 1.213880,
+      NightLight: 1.21388,
       Land_Use_Tgc: -0.28354,
       percipitation_winter: 450.63,
       percipitation_summer: 188.06,
@@ -59,14 +57,11 @@ export default function FormComponent() {
       Min_temperature: 8.02,
     };
 
-  
-
-
     try {
-      const response = await fetch('https://ml-model-v1.onrender.com/predict', {
-        method: 'POST',
+      const response = await fetch("https://ml-model-v1.onrender.com/predict", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(requestData),
       });
@@ -101,15 +96,15 @@ export default function FormComponent() {
           )}
         </div>
         <div>
-        <label htmlFor="startDate">Credit Period Start</label>
-      <DatePicker
-        selected={startDate}
-        onChange={(date) => setStartDate(date)}
-        placeholderText="Select Start Date"
-        className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm"
-        showYearDropdown
-        dateFormat="yyyy"
-      />
+          <label htmlFor="startDate">Credit Period Start</label>
+          <DatePicker
+            selected={startDate}
+            onChange={(date) => setStartDate(date)}
+            placeholderText="Select Start Date"
+            className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm"
+            showYearDropdown
+            dateFormat="yyyy"
+          />
         </div>
         <div>
           <label htmlFor="carbonEmission">Carbon Emission (in tons)</label>
@@ -123,7 +118,10 @@ export default function FormComponent() {
             className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm"
           />
         </div>
-        <button type="submit" className="mt-4 bg-blue-500 text-white px-4 py-2 rounded-lg">
+        <button
+          type="submit"
+          className="mt-4 bg-blue-500 text-white px-4 py-2 rounded-lg"
+        >
           {isSubmitting ? "Processing..." : "Predict Risk"}
         </button>
       </form>
