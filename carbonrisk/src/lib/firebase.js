@@ -1,6 +1,13 @@
 // Import necessary Firebase functions from Firebase SDK v9+ (modular SDK)
 import { initializeApp, getApps } from "firebase/app";
-import { getFirestore, collection, getDocs, addDoc } from "firebase/firestore";
+import {
+  getFirestore,
+  collection,
+  getDocs,
+  addDoc,
+  query,
+  where,
+} from "firebase/firestore";
 
 // Firebase config object with environment variables
 const firebaseConfig = {
@@ -55,4 +62,4 @@ const testConnection = async () => {
 testConnection();
 
 // Export Firestore functions for use in other parts of the app
-export { db, collection, getDocs, addDoc, app };
+export { db, collection, getDocs, addDoc, query, where, app };

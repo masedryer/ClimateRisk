@@ -1,33 +1,56 @@
 "use client";
-import "./globals.css";
+import "../globals.css";
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import {
-  AreaChart,
-  Area,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   Tooltip,
   ResponsiveContainer,
   CartesianGrid,
-  LineChart,
-  Line,
   Legend,
 } from "recharts";
-import { db, collection, getDocs } from "../lib/firebase";
+import { db, collection, getDocs } from "../../lib/firebase"; // Import Firebase functions
 
 const Dashboard = () => {
   const [jsonData, setJsonData] = useState([]); // Store the fetched JSON data
+  const [loading, setLoading] = useState(true); // Loading state to control rendering
 
   useEffect(() => {
     const fetchJsonData = async () => {
       try {
-        // Fetching data from Firebase collection yearlydata
+        // Fetching data from Firebase collection "yearlydata"
         const querySnapshot = await getDocs(collection(db, "yearlydata"));
         const data = querySnapshot.docs.map((doc) => doc.data());
-        setJsonData(data); // Storing data in state
+
+        // Log the raw data to inspect it
+        console.log("Fetched Data:", data);
+
+        // Filter out data with missing or invalid temperature values
+        const validData = data
+          .filter(
+            (item) =>
+              item["Max temperature"] !== null &&
+              item["Min temperature"] !== null &&
+              !isNaN(item["Max temperature"]) &&
+              !isNaN(item["Min temperature"])
+          )
+          .filter(
+            // Remove empty "mean temperature" or "min temperature" fields
+            (item) =>
+              item["mean temperature"] !== null &&
+              item["mean temperature"] !== "" &&
+              item["min temperature"] !== null &&
+              item["min temperature"] !== ""
+          );
+
+        setJsonData(validData); // Storing valid data in state
+        setLoading(false); // Data is loaded, stop loading
       } catch (error) {
         console.error("Error fetching data from Firebase:", error);
+        setLoading(false); // Stop loading even if there's an error
       }
     };
 
@@ -58,6 +81,11 @@ const Dashboard = () => {
   const lowestMinTempTrend = filteredData.filter(
     (item) => item["Country Name"] === lowestMinTempCountry
   );
+
+  // Ensure loading state is handled, and render loading text if necessary
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div>

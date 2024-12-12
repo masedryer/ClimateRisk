@@ -6,6 +6,7 @@ import React from "react";
 import Navbar from "@/components/ui/Navbar/navbar";
 import Footer from "@/components/ui/Footer";
 import { Box } from "@mui/material";
+import "./globals.css";
 
 // Create a custom theme (you can use the default theme as well)
 const theme = createTheme({
@@ -31,7 +32,8 @@ export default function RootLayout({ children }) {
         <ThemeProvider theme={theme}>
           <CssBaseline /> {/* Ensures baseline styles */}
           <Navbar />
-          <Box sx={{ width: "100%", padding: 0 }}>{children}</Box> {/* Fullwidth layout */}
+          <Box sx={{ width: "100%", padding: 0 }}>{children}</Box>{" "}
+          {/* Fullwidth layout */}
           <Footer />
         </ThemeProvider>
       </body>

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import "../globals.css";
 import { ClipLoader } from "react-spinners";
 import CountrySelect from "@/components/ui/CountrySelect";
 import StartDatePicker from "@/components/ui/StartDatePicker";
