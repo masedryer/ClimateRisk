@@ -12,7 +12,12 @@ import {
   CartesianGrid,
   Legend,
 } from "recharts";
-import { db, collection, getDocs } from "../../lib/firebase"; // Import Firebase functions
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
 
 const Dashboard = () => {
   const [jsonData, setJsonData] = useState([]); // Store the fetched JSON data
@@ -21,35 +26,26 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchJsonData = async () => {
       try {
-        // Fetching data from Firebase collection "yearlydata"
-        const querySnapshot = await getDocs(collection(db, "yearlydata"));
-        const data = querySnapshot.docs.map((doc) => doc.data());
+        // Fetching data from Supabase table "yearlydata"
+        const { data, error } = await supabase.from("yearlydata").select("*");
 
-        // Log the raw data to inspect it
+        if (error) {
+          console.error("Error fetching data from Supabase:", error);
+          setLoading(false);
+          return;
+        }
+
         console.log("Fetched Data:", data);
 
-        // Filter out data with missing or invalid temperature values
-        const validData = data
-          .filter(
-            (item) =>
-              item["Max temperature"] !== null &&
-              item["Min temperature"] !== null &&
-              !isNaN(item["Max temperature"]) &&
-              !isNaN(item["Min temperature"])
-          )
-          .filter(
-            // Remove empty "mean temperature" or "min temperature" fields
-            (item) =>
-              item["mean temperature"] !== null &&
-              item["mean temperature"] !== "" &&
-              item["min temperature"] !== null &&
-              item["min temperature"] !== ""
-          );
+        // Filter out data with missing or invalid NDVI values
+        const validData = data.filter(
+          (item) => item["NDVI"] !== null && !isNaN(item["NDVI"])
+        );
 
         setJsonData(validData); // Storing valid data in state
         setLoading(false); // Data is loaded, stop loading
       } catch (error) {
-        console.error("Error fetching data from Firebase:", error);
+        console.error("Unexpected error:", error);
         setLoading(false); // Stop loading even if there's an error
       }
     };
@@ -57,100 +53,83 @@ const Dashboard = () => {
     fetchJsonData();
   }, []);
 
-  // 1. Filter the data for the years 2015-2021
-  const filteredData = jsonData.filter(
-    (item) => item.Year >= 2015 && item.Year <= 2021
-  );
+  // 1. Get the top 5 countries with the highest NDVI values, ensuring countries are distinct
+  const sortedNDVIData = jsonData.sort((a, b) => b["NDVI"] - a["NDVI"]); // Sort by highest NDVI
 
-  // 2. Find the 2 countries with the highest max temperature and the lowest min temperature
-  const sortedMaxTempData = filteredData
-    .sort((a, b) => b["Max temperature"] - a["Max temperature"]) // Sort by highest max temperature
-    .slice(0, 2); // Take the top 2 countries with highest max temperature
+  // Filter out duplicates based on "Country Name" and get the top 5
+  const uniqueCountries = [];
+  const topCountries = [];
 
-  const sortedMinTempData = filteredData
-    .sort((a, b) => a["Min temperature"] - b["Min temperature"]) // Sort by lowest min temperature
-    .slice(0, 2); // Take the top 2 countries with lowest min temperature
+  sortedNDVIData.forEach((item) => {
+    if (!uniqueCountries.includes(item["Country Name"])) {
+      uniqueCountries.push(item["Country Name"]);
+      topCountries.push(item["Country Name"]);
+    }
+    if (topCountries.length === 5) return; // Stop when we have top 5 countries
+  });
 
-  // 3. Prepare temperature trend data for the highest max temperature and lowest min temperature countries
-  const highestMaxTempCountry = sortedMaxTempData[0]?.["Country Name"];
-  const lowestMinTempCountry = sortedMinTempData[0]?.["Country Name"];
-
-  const highestMaxTempTrend = filteredData.filter(
-    (item) => item["Country Name"] === highestMaxTempCountry
-  );
-  const lowestMinTempTrend = filteredData.filter(
-    (item) => item["Country Name"] === lowestMinTempCountry
-  );
+  // 2. Generate the line chart data for each country (from 2015 to 2022)
+  const getCountryData = (countryName) => {
+    return jsonData
+      .filter(
+        (item) =>
+          item["Country Name"] === countryName &&
+          item["Year"] >= 2015 &&
+          item["Year"] <= 2022
+      )
+      .map((item) => ({
+        Year: item["Year"],
+        NDVI: item["NDVI"],
+      }));
+  };
 
   // Ensure loading state is handled, and render loading text if necessary
   if (loading) {
     return <div>Loading...</div>;
   }
 
+  // Limit the number of charts to 5
+  const top5Countries = topCountries.slice(0, 5);
+
   return (
     <div>
       <div className="p-6 max-w-7xl mx-auto space-y-6">
         <h1 className="text-2xl font-bold">Dashboard</h1>
 
-        {/* Temperature Trend Line Chart (Highest Max Temp and Lowest Min Temp Countries) */}
-        {highestMaxTempCountry && lowestMinTempCountry ? (
-          <>
-            <Card>
-              <CardHeader>
-                <CardTitle>
-                  Temperature Trend for {highestMaxTempCountry}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={highestMaxTempTrend}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="Year" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Line
-                        type="monotone"
-                        dataKey="Max temperature"
-                        stroke="#8884d8"
-                        name={highestMaxTempCountry}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
+        {/* Temperature Trend Line Chart (Top 5 Countries with highest NDVI) */}
+        {top5Countries.length > 0 ? (
+          top5Countries.map((country) => {
+            const countryData = getCountryData(country);
 
-            <Card>
-              <CardHeader>
-                <CardTitle>
-                  Temperature Trend for {lowestMinTempCountry}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={lowestMinTempTrend}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="Year" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Line
-                        type="monotone"
-                        dataKey="Min temperature"
-                        stroke="#82ca9d"
-                        name={lowestMinTempCountry}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
-          </>
+            return (
+              <Card key={country}>
+                <CardHeader>
+                  <CardTitle>NDVI Trend for {country}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={countryData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="Year" />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        <Line
+                          type="monotone"
+                          dataKey="NDVI"
+                          stroke="#8884d8"
+                          name={country}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })
         ) : (
-          <div>No data available for the selected temperature trends.</div>
+          <div>No data available for the selected NDVI trends.</div>
         )}
       </div>
     </div>
