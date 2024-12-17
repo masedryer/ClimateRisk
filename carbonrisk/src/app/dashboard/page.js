@@ -1,135 +1,166 @@
 "use client";
 import "../globals.css";
 import React, { useState, useEffect } from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  CartesianGrid,
-  Legend,
-} from "recharts";
 import { createClient } from "@supabase/supabase-js";
 
+// Initialize Supabase client
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
 const Dashboard = () => {
-  const [jsonData, setJsonData] = useState([]); // Store the fetched JSON data
-  const [loading, setLoading] = useState(true); // Loading state to control rendering
+  const [countries, setCountries] = useState([]); // All countries for filters
+  const [topCountries, setTopCountries] = useState([]); // Top 5 countries by NDVI
+  const [selectedCountries, setSelectedCountries] = useState([]); // Selected countries
+  const [metrics, setMetrics] = useState([]); // Selected metrics
+  const [availableMetrics, setAvailableMetrics] = useState([]); // All metrics
+  const [chartData, setChartData] = useState({}); // Chart data
+  const [filterRange, setFilterRange] = useState("2000-2010"); // Year filter
+  const [error, setError] = useState(null); // Error state
 
-  useEffect(() => {
-    const fetchJsonData = async () => {
-      try {
-        // Fetching data from Supabase table "yearlydata"
-        const { data, error } = await supabase.from("yearlydata").select("*");
+  // Fetch all countries
+  const fetchCountries = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("region")
+        .select('id, "Country Name"');
 
-        if (error) {
-          console.error("Error fetching data from Supabase:", error);
-          setLoading(false);
-          return;
-        }
-
-        console.log("Fetched Data:", data);
-
-        // Filter out data with missing or invalid NDVI values
-        const validData = data.filter(
-          (item) => item["NDVI"] !== null && !isNaN(item["NDVI"])
-        );
-
-        setJsonData(validData); // Storing valid data in state
-        setLoading(false); // Data is loaded, stop loading
-      } catch (error) {
-        console.error("Unexpected error:", error);
-        setLoading(false); // Stop loading even if there's an error
-      }
-    };
-
-    fetchJsonData();
-  }, []);
-
-  // 1. Get the top 5 countries with the highest NDVI values, ensuring countries are distinct
-  const sortedNDVIData = jsonData.sort((a, b) => b["NDVI"] - a["NDVI"]); // Sort by highest NDVI
-
-  // Filter out duplicates based on "Country Name" and get the top 5
-  const uniqueCountries = [];
-  const topCountries = [];
-
-  sortedNDVIData.forEach((item) => {
-    if (!uniqueCountries.includes(item["Country Name"])) {
-      uniqueCountries.push(item["Country Name"]);
-      topCountries.push(item["Country Name"]);
+      if (error) throw error;
+      setCountries(data);
+    } catch (err) {
+      console.error("Error fetching countries:", err);
+      setError(err.message);
     }
-    if (topCountries.length === 5) return; // Stop when we have top 5 countries
-  });
-
-  // 2. Generate the line chart data for each country (from 2015 to 2022)
-  const getCountryData = (countryName) => {
-    return jsonData
-      .filter(
-        (item) =>
-          item["Country Name"] === countryName &&
-          item["Year"] >= 2015 &&
-          item["Year"] <= 2022
-      )
-      .map((item) => ({
-        Year: item["Year"],
-        NDVI: item["NDVI"],
-      }));
   };
 
-  // Ensure loading state is handled, and render loading text if necessary
-  if (loading) {
-    return <div>Loading...</div>;
-  }
+  // Fetch top 5 countries by NDVI
+  const fetchTopCountries = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("yearlydata_test")
+        .select("NDVI, country_id")
+        .eq("Year", 2020) // Filter for a specific year (modify as needed)
+        .order("NDVI", { ascending: false }) // Sort by NDVI in descending order
+        .limit(5); // Limit to top 5
 
-  // Limit the number of charts to 5
-  const top5Countries = topCountries.slice(0, 5);
+      if (error) throw error;
+
+      // Join with region table to get country names
+      const countryIds = data.map((row) => row.country_id);
+      const { data: regions, error: regionError } = await supabase
+        .from("region")
+        .select('id, "Country Name"')
+        .in("id", countryIds);
+
+      if (regionError) throw regionError;
+
+      // Map NDVI values to country names
+      const topCountriesData = data.map((row) => {
+        const countryName = regions.find((region) => region.id === row.country_id)?.["Country Name"];
+        return { name: countryName, ndvi: row.NDVI };
+      });
+      setTopCountries(topCountriesData);
+    } catch (err) {
+      console.error("Error fetching top countries by NDVI:", err);
+      setError(err.message);
+    }
+  };
+
+  // Fetch available metrics
+  const fetchAvailableMetrics = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("yearlydata_test")
+        .select('"Max temperature", "Mean temperature"')
+        .limit(1); // Fetch only the schema (not the entire dataset)
+
+      if (error) throw error;
+      setAvailableMetrics(["Max Temperature", "Mean Temperature"]); // Set available metrics
+    } catch (err) {
+      console.error("Error fetching available metrics:", err);
+      setError(err.message);
+    }
+  };
+
+  // Fetch and process metrics based on filters
+  const processMetrics = async () => {
+    const yearRange = getYearRange(filterRange);
+    try {
+      const { data, error } = await supabase
+        .from("yearlydata_test")
+        .select("Year, country_id, MaxTemp, MeanTemp")
+        .in("Year", yearRange)
+        .in("country_id", selectedCountries);
+
+      if (error) throw error;
+
+      // Aggregate metrics or prepare for visualization (if needed)
+      setChartData(data);
+    } catch (err) {
+      console.error("Error processing metrics:", err);
+      setError(err.message);
+    }
+  };
+
+  // Get year range based on filter
+  const getYearRange = (filter) => {
+    switch (filter) {
+      case "2000-2010":
+        return Array.from({ length: 11 }, (_, i) => 2000 + i);
+      case "2010-2020":
+        return Array.from({ length: 11 }, (_, i) => 2010 + i);
+      case "2020-2024":
+        return Array.from({ length: 5 }, (_, i) => 2020 + i);
+      default:
+        return [];
+    }
+  };
+
+  // Fetch initial data on mount
+  useEffect(() => {
+    fetchCountries();
+    fetchTopCountries();
+    fetchAvailableMetrics();
+  }, []);
+
+  // Update metrics whenever filters change
+  useEffect(() => {
+    if (selectedCountries.length > 0 && metrics.length > 0) {
+      processMetrics();
+    }
+  }, [selectedCountries, metrics, filterRange]);
 
   return (
     <div>
-      <div className="p-6 max-w-7xl mx-auto space-y-6">
-        <h1 className="text-2xl font-bold">Dashboard</h1>
+      <h1>Dashboard</h1>
+      {error && <p className="text-red-500">{error}</p>}
 
-        {/* Temperature Trend Line Chart (Top 5 Countries with highest NDVI) */}
-        {top5Countries.length > 0 ? (
-          top5Countries.map((country) => {
-            const countryData = getCountryData(country);
+      {/* Top 5 Countries by NDVI */}
+      <div>
+        <h2>Top 5 Countries by NDVI (2020)</h2>
+        <ul>
+          {topCountries.map((country, index) => (
+            <li key={index}>
+              {index + 1}. {country.name}: {country.ndvi.toFixed(2)}
+            </li>
+          ))}
+        </ul>
+      </div>
 
-            return (
-              <Card key={country}>
-                <CardHeader>
-                  <CardTitle>NDVI Trend for {country}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={countryData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="Year" />
-                        <YAxis />
-                        <Tooltip />
-                        <Legend />
-                        <Line
-                          type="monotone"
-                          dataKey="NDVI"
-                          stroke="#8884d8"
-                          name={country}
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })
+      {/* Metrics Filter */}
+      <div>
+        <h2>Metrics</h2>
+        <p>Available Metrics: {availableMetrics.join(", ")}</p>
+      </div>
+
+      {/* Chart Section */}
+      <div>
+        <h2>Charts</h2>
+        {Object.keys(chartData).length === 0 ? (
+          <p>No data available for the selected filters.</p>
         ) : (
-          <div>No data available for the selected NDVI trends.</div>
+          <pre>{JSON.stringify(chartData, null, 2)}</pre>
         )}
       </div>
     </div>
