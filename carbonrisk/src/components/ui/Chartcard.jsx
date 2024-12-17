@@ -1,66 +1,50 @@
-"use client";
 import React from "react";
+import { Line } from "react-chartjs-2";
 import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
   Tooltip,
-  ResponsiveContainer,
-  CartesianGrid,
   Legend,
-} from "recharts";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+} from "chart.js";
 
-const ChartCard = ({
-  title,
-  data,
-  filterRange,
-  getXAxisTicks,
-  countryList,
-}) => {
+// Register chart components with Chart.js
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+);
+
+const ChartCard = ({ ndviData, countryName }) => {
+  const chartData = {
+    labels: ndviData.map((data) => data.Year), // Years as labels
+    datasets: [
+      {
+        label: `NDVI for ${countryName}`,
+        data: ndviData.map((data) => data.NDVI), // NDVI values
+        fill: false,
+        borderColor: "rgba(75, 192, 192, 1)",
+        tension: 0.1,
+      },
+    ],
+  };
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="h-64">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="Year" ticks={getXAxisTicks(filterRange)} />
-              <YAxis
-                domain={
-                  title === "NDVI"
-                    ? [0, 1]
-                    : title === "Max Temperature (°C)"
-                    ? [-10, 50]
-                    : title === "Summer Precipitation (mm)"
-                    ? [0, 5000]
-                    : title === "Forest Area (%)"
-                    ? [0, 100]
-                    : title === "Night Light (DN value)"
-                    ? [0, 63]
-                    : ["auto", "auto"]
-                }
-              />
-              <Tooltip />
-              <Legend />
-              {countryList.map((country, idx) => (
-                <Line
-                  key={idx}
-                  type="monotone"
-                  dataKey="Value"
-                  stroke="#8884d8"
-                  activeDot={{ r: 8 }}
-                />
-              ))}
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="mt-8 p-4 bg-white rounded-lg shadow-md">
+      <h2 className="text-xl font-bold mb-4">NDVI Data for {countryName}</h2>
+      {ndviData.length > 0 ? (
+        <Line data={chartData} />
+      ) : (
+        <p>No data available for the selected country.</p>
+      )}
+    </div>
   );
 };
 
