@@ -3,9 +3,11 @@
 import React, { useState } from "react";
 import { ClipLoader } from "react-spinners";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { AlertTriangle, CheckCircle, AlertCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle, AlertCircle, Download } from "lucide-react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 import "../globals.css";
 
@@ -15,8 +17,8 @@ export default function RiskPredictor() {
   const [carbonEmission, setCarbonEmission] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [riskScore, setRiskScore] = useState(null);
+  const [isExporting, setIsExporting] = useState(false);
 
-  // List of sample countries
   const countries = [
     "Canada",
     "Australia",
@@ -30,7 +32,6 @@ export default function RiskPredictor() {
     "United Kingdom",
   ];
 
-  // Handle form submission
   const handleSubmit = (e) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -41,7 +42,66 @@ export default function RiskPredictor() {
     }, 3000);
   };
 
-  // Get risk level details based on score
+  const exportToPDF = async () => {
+    setIsExporting(true);
+    const resultsElement = document.getElementById('risk-results');
+    
+    try {
+      // First page - Results
+      const canvas1 = await html2canvas(resultsElement, {
+        scale: 2,
+        backgroundColor: '#ffffff'
+      });
+      const imgData1 = canvas1.toDataURL('image/png');
+      
+      // Initialize PDF
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const imgHeight1 = (canvas1.height * pageWidth) / canvas1.width;
+      
+      // Add first page
+      pdf.addImage(imgData1, 'PNG', 0, 0, pageWidth, imgHeight1);
+      
+      // Add explanation page
+      pdf.addPage();
+      pdf.setFontSize(16);
+      pdf.text('Risk Rating and Interpretation', 20, 20);
+      
+      pdf.setFontSize(12);
+      pdf.text([
+        'The risk rating falls under four distinct ranges:',
+        '• 1.0-2.4: The project is highly achievable with minimal barriers',
+        '• 2.5-4.9: The project is moderately achievable',
+        '• 5.0-7.4: The project is challenging to achieve',
+        '• 7.5-10.0: The project is highly unlikely to be achievable'
+      ], 20, 40);
+      
+      pdf.text('Risk Factors That Affect Prediction Results:', 20, 90);
+      pdf.text([
+        '1. Environmental Risks',
+        '   • Temperature variations',
+        '   • Seasonal precipitation',
+        '   • Carbon emissions',
+        '2. Political Risks',
+        '   • Political stability',
+        '   • Regulatory framework',
+        '3. Economic Factors',
+        '   • Market conditions',
+        '   • Investment climate',
+        '4. NDVI (Normalized Difference Vegetation Index)',
+        '   • Vegetation health assessment',
+        '   • Land use changes monitoring'
+      ], 20, 100);
+      
+      pdf.save('risk-analysis-report.pdf');
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+    }
+    
+    setIsExporting(false);
+  };
+
   const getRiskLevel = (score) => {
     if (score >= 8) {
       return {
@@ -155,7 +215,6 @@ export default function RiskPredictor() {
 
           <CardContent className="p-8">
             <form onSubmit={handleSubmit} className="space-y-8">
-              {/* Project Location */}
               <div className="space-y-4">
                 <label className="block text-sm font-medium text-gray-700">
                   Project Location
@@ -164,6 +223,7 @@ export default function RiskPredictor() {
                   value={selectedCountry}
                   onChange={(e) => setSelectedCountry(e.target.value)}
                   className="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  required
                 >
                   <option value="">Select a country</option>
                   {countries.map((country) => (
@@ -173,7 +233,7 @@ export default function RiskPredictor() {
                   ))}
                 </select>
               </div>
-              {/* Project Start Year */}
+
               <div className="space-y-4 relative">
                 <label className="block text-sm font-medium text-gray-700">
                   Project Start Year
@@ -191,7 +251,6 @@ export default function RiskPredictor() {
                 />
               </div>
 
-              {/* Carbon Emission Input */}
               <div className="space-y-4">
                 <label className="block text-sm font-medium text-gray-700">
                   Expected Carbon Emission (tons CO2e/year)
@@ -206,7 +265,6 @@ export default function RiskPredictor() {
                 />
               </div>
 
-              {/* Submit Button */}
               <button
                 type="submit"
                 disabled={isSubmitting}
@@ -225,59 +283,135 @@ export default function RiskPredictor() {
           </CardContent>
         </Card>
 
-        {/* Results Card */}
         {riskScore && (
-          <Card className="border-0 shadow-xl backdrop-blur-sm bg-white/90">
-            <CardHeader className="bg-white/90 rounded-t-lg border-b">
-              <CardTitle className="text-2xl font-bold text-gray-900">
-                Risk Analysis Results
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-8">
-              <div className="space-y-6">
-                {/* Risk Score Display */}
-                <div className={`flex items-center justify-between p-4 rounded-lg ${getRiskLevel(riskScore).bg}`}>
-                  <div className="flex items-center space-x-3">
-                    {getRiskLevel(riskScore).icon}
-                    <span className={`font-semibold text-lg ${getRiskLevel(riskScore).color}`}>
-                      {getRiskLevel(riskScore).level}
+          <div id="risk-results">
+            <Card className="border-0 shadow-xl backdrop-blur-sm bg-white/90">
+              <CardHeader className="bg-white/90 rounded-t-lg border-b">
+                <div className="flex justify-between items-center">
+                  <CardTitle className="text-2xl font-bold text-gray-900">
+                    Risk Analysis Results
+                  </CardTitle>
+                  <button
+                    onClick={exportToPDF}
+                    disabled={isExporting}
+                    className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+                  >
+                    <Download className="w-5 h-5" />
+                    <span>{isExporting ? 'Exporting...' : 'Export PDF'}</span>
+                  </button>
+                </div>
+              </CardHeader>
+              <CardContent className="p-8">
+                <div className="space-y-6">
+                  <div className={`flex items-center justify-between p-4 rounded-lg ${getRiskLevel(riskScore).bg}`}>
+                    <div className="flex items-center space-x-3">
+                      {getRiskLevel(riskScore).icon}
+                      <span className={`font-semibold text-lg ${getRiskLevel(riskScore).color}`}>
+                        {getRiskLevel(riskScore).level}
+                      </span>
+                    </div>
+                    <span className="text-3xl font-bold text-gray-900">
+                      {riskScore}/10
                     </span>
                   </div>
-                  <span className="text-3xl font-bold text-gray-900">
-                    {riskScore}/10
-                  </span>
-                </div>
 
-                {/* Risk Score Progress Bar */}
-                <div className="space-y-2">
-                  <div className="w-full bg-gray-200 rounded-full h-3">
-                    <div
-                      className="h-3 rounded-full transition-all duration-500"
-                      style={{
-                        width: `${(riskScore / 10) * 100}%`,
-                        backgroundColor:
-                          riskScore >= 8
-                            ? "#ef4444"
-                            : riskScore >= 5
-                              ? "#f59e0b"
-                              : "#10b981",
-                      }}
-                    />
+                  <div className="space-y-2">
+                    <div className="w-full bg-gray-200 rounded-full h-3">
+                      <div
+                        className="h-3 rounded-full transition-all duration-500"
+                        style={{
+                          width: `${(riskScore / 10) * 100}%`,
+                          backgroundColor:
+                            riskScore >= 8
+                              ? "#ef4444"
+                              : riskScore >= 5
+                                ? "#f59e0b"
+                                : "#10b981",
+                        }}
+                      />
+                    </div>
+                    <div className="flex justify-between text-sm font-semibold text-gray-700">
+                      <span>Low Risk</span>
+                      <span>High Risk</span>
+                    </div>
                   </div>
-                  <div className="flex justify-between text-sm font-semibold text-gray-700">
-                    <span>Low Risk</span>
-                    <span>High Risk</span>
-                  </div>
-                </div>
 
-                {/* Risk Assessment Details */}
-                <div className="mt-8">
+                  <div className="mt-8">
                   <h4 className="text-2xl font-bold text-gray-900 mb-6">Risk Assessment Details</h4>
-                  {getRiskLevel(riskScore).message}
+                    {getRiskLevel(riskScore).message}
+                  </div>
+
+                  <div className="mt-8">
+                    <h4 className="text-2xl font-bold text-gray-900 mb-6">Project Information</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-gray-50 rounded-lg">
+                      <div>
+                        <p className="text-sm font-medium text-gray-500">Project Location</p>
+                        <p className="mt-2 text-lg font-medium text-gray-900">{selectedCountry}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-500">Project Start Year</p>
+                        <p className="mt-2 text-lg font-medium text-gray-900">
+                          {startDate ? startDate.getFullYear() : '-'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-500">Expected Carbon Emission</p>
+                        <p className="mt-2 text-lg font-medium text-gray-900">
+                          {carbonEmission} tons CO2e/year
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-500">Analysis Date</p>
+                        <p className="mt-2 text-lg font-medium text-gray-900">
+                          {new Date().toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-8">
+                    <h4 className="text-2xl font-bold text-gray-900 mb-6">Recommendations</h4>
+                    <div className="p-6 bg-blue-50 rounded-lg">
+                      <ul className="space-y-4">
+                        <li className="flex items-start">
+                          <div className="flex-shrink-0">
+                            <CheckCircle className="w-6 h-6 text-blue-600" />
+                          </div>
+                          <p className="ml-3 text-blue-900">
+                            Regular monitoring of environmental indicators and NDVI trends
+                          </p>
+                        </li>
+                        <li className="flex items-start">
+                          <div className="flex-shrink-0">
+                            <CheckCircle className="w-6 h-6 text-blue-600" />
+                          </div>
+                          <p className="ml-3 text-blue-900">
+                            Implement robust risk mitigation strategies
+                          </p>
+                        </li>
+                        <li className="flex items-start">
+                          <div className="flex-shrink-0">
+                            <CheckCircle className="w-6 h-6 text-blue-600" />
+                          </div>
+                          <p className="ml-3 text-blue-900">
+                            Maintain detailed documentation of all project activities
+                          </p>
+                        </li>
+                        <li className="flex items-start">
+                          <div className="flex-shrink-0">
+                            <CheckCircle className="w-6 h-6 text-blue-600" />
+                          </div>
+                          <p className="ml-3 text-blue-900">
+                            Regular stakeholder engagement and communication
+                          </p>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         )}
       </div>
     </div>
