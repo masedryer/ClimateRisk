@@ -1,4 +1,4 @@
-import React from "react";
+// components/ui/ChartCard.jsx
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -11,7 +11,6 @@ import {
   Legend,
 } from "chart.js";
 
-// Register chart components with Chart.js
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -22,13 +21,25 @@ ChartJS.register(
   Legend
 );
 
-const ChartCard = ({ ndviData, countryName }) => {
+const ChartCard = ({ metricName, metricData = [], countryName }) => {
+  // 1) Fixed range of years (2015–2021) in ascending order
+  const allYears = [2015, 2016, 2017, 2018, 2019, 2020, 2021];
+
+  // 2) Dictionary { year: value }
+  const dataByYear = {};
+  metricData.forEach((item) => {
+    dataByYear[item.year] = item.value;
+  });
+
+  // 3) Build chartData
   const chartData = {
-    labels: ndviData.map((data) => data.Year), // Years as labels
+    labels: allYears.map(String),
     datasets: [
       {
-        label: `NDVI for ${countryName}`,
-        data: ndviData.map((data) => data.NDVI), // NDVI values
+        label: `${metricName} for ${countryName}`,
+        data: allYears.map((year) =>
+          dataByYear[year] !== undefined ? dataByYear[year] : null
+        ),
         fill: false,
         borderColor: "rgba(75, 192, 192, 1)",
         tension: 0.1,
@@ -36,14 +47,19 @@ const ChartCard = ({ ndviData, countryName }) => {
     ],
   };
 
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+  };
+
   return (
-    <div className="mt-8 p-4 bg-white rounded-lg shadow-md">
-      <h2 className="text-xl font-bold mb-4">NDVI Data for {countryName}</h2>
-      {ndviData.length > 0 ? (
-        <Line data={chartData} />
-      ) : (
-        <p>No data available for the selected country.</p>
-      )}
+    <div className="p-4 bg-white rounded-lg shadow-md w-full h-[400px]">
+      <h2 className="text-xl font-bold mb-4">
+        {metricName} Data for {countryName}
+      </h2>
+      <div className="h-full">
+        <Line data={chartData} options={options} />
+      </div>
     </div>
   );
 };

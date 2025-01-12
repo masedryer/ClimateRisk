@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase"; // Import Supabase client
 import ChartCard from "./ChartCard"; // Import ChartCard component
 
-const CarbonEmission = ({ selectedCountry }) => {
+const GDP = ({ selectedCountry }) => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -36,12 +36,12 @@ const CarbonEmission = ({ selectedCountry }) => {
         }
 
         const { data: metricData, error } = await supabase
-          .from("environment") // Replace with your actual table name
-          .select("Year, carbon_emission") // Replace with the actual columns from your DB
+          .from("socioeconomic") // Replace with your actual table name
+          .select("Year, gdp") // Replace with the actual columns from your DB
           .eq("country_id", countryId);
 
         if (error) {
-          console.error("Error fetching Carbon Emission data:", error.message);
+          console.error("Error fetching GDP data:", error.message);
           setLoading(false);
           return;
         }
@@ -49,7 +49,7 @@ const CarbonEmission = ({ selectedCountry }) => {
         // Format the data for ChartCard
         const formattedData = metricData.map((item) => ({
           year: item.Year,
-          value: item.carbon_emission,
+          value: item.gdp,
         }));
 
         setData(formattedData);
@@ -67,11 +67,11 @@ const CarbonEmission = ({ selectedCountry }) => {
 
   return (
     <ChartCard
-      metricName="Carbon Emission"
+      metricName="GDP"
       metricData={data}
       countryName={selectedCountry}
     />
   );
 };
 
-export default CarbonEmission;
+export default GDP;
