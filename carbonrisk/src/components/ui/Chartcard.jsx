@@ -24,7 +24,7 @@ ChartJS.register(
 const ChartCard = ({ metricName, metricData = [], countryName }) => {
   // 1) Fixed range of years (2015–2021) in ascending order
   const allYears = [2015, 2016, 2017, 2018, 2019, 2020, 2021];
-
+//a
   // 2) Dictionary { year: value }
   const dataByYear = {};
   metricData.forEach((item) => {
