@@ -1,7 +1,7 @@
 // MeanTemp Component (e.g., MeanTemp.jsx)
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import ChartCard from "./ChartCard";
+import ChartCard from "./Chartcard";
 
 const MeanTemp = ({ selectedCountry }) => {
   const [data, setData] = useState([]);

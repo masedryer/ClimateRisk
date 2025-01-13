@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase"; // Import Supabase client
-import ChartCard from "./ChartCard"; // Import ChartCard component
+import ChartCard from "./Chartcard"; // Import ChartCard component
 
 const PopulationDensity = ({ selectedCountry }) => {
   const [data, setData] = useState([]);

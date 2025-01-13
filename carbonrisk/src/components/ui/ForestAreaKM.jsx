@@ -1,7 +1,7 @@
 // ForestAreaKM Component (e.g., ForestAreaKM.jsx)
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import ChartCard from "./ChartCard";
+import ChartCard from "./Chartcard";
 
 const ForestAreaKM = ({ selectedCountry }) => {
   const [data, setData] = useState([]);

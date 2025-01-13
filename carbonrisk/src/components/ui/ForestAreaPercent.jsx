@@ -1,7 +1,7 @@
 // ForestAreaPercent Component (e.g., ForestAreaPercent.jsx)
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import ChartCard from "./ChartCard";
+import ChartCard from "./Chartcard";
 
 const ForestAreaPercent = ({ selectedCountry }) => {
   const [data, setData] = useState([]);

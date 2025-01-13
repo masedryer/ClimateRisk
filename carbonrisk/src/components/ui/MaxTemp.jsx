@@ -1,7 +1,7 @@
 // MaxTemp Component (e.g., MaxTemp.jsx)
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import ChartCard from "./ChartCard";
+import ChartCard from "./Chartcard";
 
 const MaxTemp = ({ selectedCountry }) => {
   const [data, setData] = useState([]);

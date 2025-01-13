@@ -1,7 +1,7 @@
 // MinTemp Component (e.g., MinTemp.jsx)
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import ChartCard from "./ChartCard";
+import ChartCard from "./Chartcard";
 
 const MinTemp = ({ selectedCountry }) => {
   const [data, setData] = useState([]);
