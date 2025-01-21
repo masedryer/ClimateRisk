@@ -1,8 +1,10 @@
-import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase"; // Import Supabase client
-import ChartCard from "./Chartcard"; // Import ChartCard component
+"use client";
 
-const FDI = ({ selectedCountry }) => {
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase"; 
+import ChartCard from "./Chartcard"; // The ChartCard component
+
+const FDI = ({ selectedCountry, restrictYAxis }) => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -16,7 +18,7 @@ const FDI = ({ selectedCountry }) => {
 
       setLoading(true);
       try {
-        // Fetch the region ID based on selectedCountry
+        // 1) Fetch region ID
         const { data: regionData, error: regionError } = await supabase
           .from("region")
           .select("id")
@@ -35,9 +37,10 @@ const FDI = ({ selectedCountry }) => {
           return;
         }
 
+        // 2) Fetch FDI data
         const { data: metricData, error } = await supabase
-          .from("socioeconomic") // Replace with your actual table name
-          .select("Year, fdi") // Replace with the actual columns from your DB
+          .from("socio_economic")
+          .select("Year, fdi")
           .eq("country_id", countryId);
 
         if (error) {
@@ -46,7 +49,7 @@ const FDI = ({ selectedCountry }) => {
           return;
         }
 
-        // Format the data for ChartCard
+        // 3) Format data for ChartCard
         const formattedData = metricData.map((item) => ({
           year: item.Year,
           value: item.fdi,
@@ -55,23 +58,85 @@ const FDI = ({ selectedCountry }) => {
         setData(formattedData);
       } catch (err) {
         console.error("Unexpected error:", err);
+      } finally {
+        setLoading(false);
       }
-
-      setLoading(false);
     };
 
-    if (selectedCountry) fetchData();
+    fetchData();
   }, [selectedCountry]);
 
   if (loading) return <p>Loading data...</p>;
 
-  return (
-    <ChartCard
-      metricName="FDI"
-      metricData={data}
-      countryName={selectedCountry}
-    />
-  );
+  // If we have no data, just render a fallback
+  if (data.length === 0) {
+    return <p>No FDI data for {selectedCountry}.</p>;
+  }
+
+  // ----------------------------------------------------------------
+  //  BUILD Y-AXIS SETTINGS
+  // ----------------------------------------------------------------
+  if (restrictYAxis) {
+    //
+    // LOCKED Y-axis: FDI from 0.0 to 1.0 in steps of 0.2
+    //
+    const yAxisSettings = {
+      min: -150,
+      max: 300,
+      stepSize: 0.2,
+    };
+    return (
+      <ChartCard
+        metricName="FDI"
+        metricData={data}
+        countryName={selectedCountry}
+        yAxisSettings={yAxisSettings}
+        yAxisLabel="FDI (%)"
+      />
+    );
+  } else {
+    //
+    // AUTO-SCALE Y-axis: compute min and max from the actual data
+    //
+    let dataMin = Infinity;
+    let dataMax = -Infinity;
+    data.forEach((d) => {
+      if (d.value < dataMin) dataMin = d.value;
+      if (d.value > dataMax) dataMax = d.value;
+    });
+
+    // If data is all the same value, dataMin == dataMax;
+    // add a small offset to avoid a flat line
+    if (dataMin === dataMax) {
+      dataMin -= 0.01;
+      dataMax += 0.01;
+    }
+
+    // Add a margin around min and max so the line isn't pinned to edges
+    const margin = (dataMax - dataMin) * 0.1;
+    const dynamicMin = dataMin - margin;
+    const dynamicMax = dataMax + margin;
+
+    // We can also guess a stepSize. E.g., divide the range by 5
+    // so we get ~5 steps on the y-axis:
+    const stepSize = (dynamicMax - dynamicMin) / 5;
+
+    const yAxisSettings = {
+      min: dynamicMin,
+      max: dynamicMax,
+      stepSize: stepSize,
+    };
+
+    return (
+      <ChartCard
+        metricName="FDI"
+        metricData={data}
+        countryName={selectedCountry}
+        yAxisSettings={yAxisSettings}
+        yAxisLabel="FDI (%)"
+      />
+    );
+  }
 };
 
 export default FDI;

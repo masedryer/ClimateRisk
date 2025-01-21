@@ -1,4 +1,5 @@
-// components/ui/ChartCard.jsx
+"use client";
+
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -21,17 +22,26 @@ ChartJS.register(
   Legend
 );
 
-const ChartCard = ({ metricName, metricData = [], countryName }) => {
-  // 1) Fixed range of years (2015–2021) in ascending order
-  const allYears = [2015, 2016, 2017, 2018, 2019, 2020, 2021];
-//a
-  // 2) Dictionary { year: value }
+const ChartCard = ({
+  metricName,
+  metricData = [],
+  countryName,
+  yAxisSettings,
+  // new props for axis labels:
+  xAxisLabel = "Years",
+  yAxisLabel = "",
+}) => {
+  // Years we want to plot (2015–2021, for example)
+  // or you might compute dynamically.
+  const allYears = [2015, 2016, 2017, 2018, 2019, 2020];
+
+  // Build a dictionary { year: value } from metricData
   const dataByYear = {};
   metricData.forEach((item) => {
     dataByYear[item.year] = item.value;
   });
 
-  // 3) Build chartData
+  // Create chartData with those years as labels
   const chartData = {
     labels: allYears.map(String),
     datasets: [
@@ -47,13 +57,37 @@ const ChartCard = ({ metricName, metricData = [], countryName }) => {
     ],
   };
 
+  // If we have yAxisSettings, apply them, otherwise auto-scale
+  const yOptions = {
+    title: {
+      display: !!yAxisLabel,
+      text: yAxisLabel,
+    },
+  };
+  if (yAxisSettings) {
+    yOptions.min = yAxisSettings.min;
+    yOptions.max = yAxisSettings.max;
+    yOptions.ticks = {
+      stepSize: yAxisSettings.stepSize,
+    };
+  }
+
   const options = {
     responsive: true,
     maintainAspectRatio: false,
+    scales: {
+      x: {
+        title: {
+          display: !!xAxisLabel,
+          text: xAxisLabel,
+        },
+      },
+      y: yOptions,
+    },
   };
 
   return (
-    <div className="p-4 bg-white rounded-lg shadow-md w-full h-[400px]">
+    <div className="p-4 pb-16 bg-white rounded-lg shadow-md w-full h-[400px]">
       <h2 className="text-xl font-bold mb-4">
         {metricName} Data for {countryName}
       </h2>

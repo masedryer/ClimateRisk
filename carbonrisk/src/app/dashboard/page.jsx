@@ -3,27 +3,25 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
-// For Standard Mode
+// Standard Mode
 import CountrySelect from "@/components/ui/CountrySelect";
 import MetricFilter from "@/components/ui/MetricFilter";
 
+// Example metric components
 import CountryNDVI from "@/components/ui/CountryNDVI";
 import ForestAreaPercent from "@/components/ui/ForestAreaPercent";
 import ForestAreaKM from "@/components/ui/ForestAreaKM";
-import MaxTemp from "@/components/ui/MaxTemp";
-import MeanTemp from "@/components/ui/MeanTemp";
-import MinTemp from "@/components/ui/MinTemp";
 import CarbonEmission from "@/components/ui/CarbonEmission";
-import TotalPercipitation from "@/components/ui/TotalPercipitation";
 import CountryHDI from "@/components/ui/CountryHDI";
-import CountryGDP from "@/components/ui/CountryGDP";
 import CountryFDI from "@/components/ui/CountryFDI";
 import DisasterCount from "@/components/ui/DisasterCount";
 import PoliticalStability from "@/components/ui/PoliticalStability";
 import PopulationDensity from "@/components/ui/PopulationDensity";
 import CorruptionIndex from "@/components/ui/CorruptionIndex";
+import GrossCarbonEmission from "@/components/ui/GrossCarbonEmission";
+import TreeCoverLoss from "@/components/ui/TreeCoverLoss";
 
-// For Top 5 bar chart
+// Top 5 bar chart
 import { Bar } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -38,17 +36,24 @@ import {
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 const Dashboard = () => {
-  // Sidebar open/closed state
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  // ---------------------------------------------------------------
+  // FILTER OPEN/CLOSE (for MOBILE)
+  // ---------------------------------------------------------------
+  // Desktop: Filter is always visible on the left
+  // Mobile: If false => the filter slides up off screen
+  const [filterOpen, setFilterOpen] = useState(true);
 
-  // Standard vs. Top 5
-  const [filterMode, setFilterMode] = useState("standard"); // default
+  // ---------------------------------------------------------------
+  // STANDARD vs. TOP 5
+  // ---------------------------------------------------------------
+  const [filterMode, setFilterMode] = useState("standard");
 
-  const handleModeChange = (mode) => {
-    setFilterMode(mode);
-  };
+  // Lock Scale / See Trend
+  const [restrictYAxis, setRestrictYAxis] = useState(true);
 
-  // Standard mode states
+  // ---------------------------------------------------------------
+  // STANDARD MODE STATES
+  // ---------------------------------------------------------------
   const [tempCountry, setTempCountry] = useState("");
   const [tempMetric, setTempMetric] = useState("NDVI");
   const [selections, setSelections] = useState([]);
@@ -63,7 +68,13 @@ const Dashboard = () => {
     setSelections((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // Fetch countries
+  const handleToggleYAxis = () => {
+    setRestrictYAxis((prev) => !prev);
+  };
+
+  // ---------------------------------------------------------------
+  // FETCH COUNTRIES
+  // ---------------------------------------------------------------
   const [countries, setCountries] = useState([]);
   useEffect(() => {
     const fetchCountries = async () => {
@@ -71,7 +82,7 @@ const Dashboard = () => {
         const { data, error } = await supabase.from("region").select("CountryName");
         if (error) {
           console.error("Error fetching countries:", error.message);
-        } else {
+        } else if (data) {
           const uniqueCountries = Array.from(new Set(data.map((c) => c.CountryName)));
           setCountries(uniqueCountries.map((c) => ({ value: c, label: c })));
         }
@@ -82,7 +93,9 @@ const Dashboard = () => {
     fetchCountries();
   }, []);
 
-  // Top 5 mode states
+  // ---------------------------------------------------------------
+  // TOP 5 MODE STATES
+  // ---------------------------------------------------------------
   const [isCountrySelected, setIsCountrySelected] = useState(true);
   const [regionChecked, setRegionChecked] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState("");
@@ -93,7 +106,9 @@ const Dashboard = () => {
   const [loadingTop5, setLoadingTop5] = useState(false);
   const [top5ChartData, setTop5ChartData] = useState(null);
 
-  // Fetch regions (distinct)
+  // ---------------------------------------------------------------
+  // FETCH REGIONS
+  // ---------------------------------------------------------------
   const [regionOptions, setRegionOptions] = useState([]);
   useEffect(() => {
     const fetchRegions = async () => {
@@ -101,7 +116,7 @@ const Dashboard = () => {
         const { data, error } = await supabase.from("region").select("Region");
         if (error) {
           console.error("Error fetching regions:", error.message);
-        } else {
+        } else if (data) {
           const unique = Array.from(new Set(data.map((r) => r.Region))).filter(Boolean);
           setRegionOptions(unique.map((r) => ({ value: r, label: r })));
         }
@@ -112,7 +127,9 @@ const Dashboard = () => {
     fetchRegions();
   }, []);
 
-  // Toggle highest/lowest
+  // ---------------------------------------------------------------
+  // TOGGLE HIGHEST/LOWEST
+  // ---------------------------------------------------------------
   const handleToggleHighest = () => {
     setTop5Highest(!top5Highest);
     if (!top5Highest) {
@@ -126,7 +143,9 @@ const Dashboard = () => {
     }
   };
 
-  // Country vs Region toggle
+  // ---------------------------------------------------------------
+  // COUNTRY vs REGION
+  // ---------------------------------------------------------------
   const handleCountryClick = () => {
     setIsCountrySelected(true);
     setRegionChecked(false);
@@ -141,7 +160,9 @@ const Dashboard = () => {
     }
   };
 
-  // Generate top 5
+  // ---------------------------------------------------------------
+  // GENERATE TOP 5
+  // ---------------------------------------------------------------
   const handleGenerateTop5 = async () => {
     if (!top5Metric || !selectedYear) return;
     if (!top5Highest && !top5Lowest) return;
@@ -151,43 +172,44 @@ const Dashboard = () => {
     setTop5ChartData(null);
 
     try {
-      // Decide which table to query
       const isEnvMetric = [
         "ndvi",
-        "forest_area_percent",
+        "forest_area_percentage",
         "forest_area_km",
-        "max_temperature",
-        "mean_temperature",
-        "min_temperature",
         "carbon_emission",
-        "total_percipitation"
+        "tree_cover_loss",
+        "gross_carbon_emission",
       ].includes(top5Metric);
 
-      const isSocioMetric = ["gdp", "hdi"].includes(top5Metric);
+      const isSocioMetric = [
+        "hdi",
+        "fdi",
+        "disaster_count",
+        "political_stability",
+        "population_density",
+        "corruption_index",
+      ].includes(top5Metric);
 
       let query;
       if (isEnvMetric) {
         query = supabase
-          .from("environment")
+          .from("environmental2")
           .select(`
             Year,
             ndvi,
-            forest_area_percent,
+            forest_area_percentage,
             forest_area_km,
-            max_temperature,
-            mean_temperature,
-            min_temperature,
             carbon_emission,
-            total_percipitation,
+            gross_carbon_emission,
+            tree_cover_loss,
             region ( CountryName, Region )
           `)
           .eq("Year", selectedYear);
       } else if (isSocioMetric) {
         query = supabase
-          .from("socioeconomic")
+          .from("socio_economic")
           .select(`
             Year,
-            gdp,
             hdi,
             fdi,
             disaster_count,
@@ -198,16 +220,13 @@ const Dashboard = () => {
           `)
           .eq("Year", selectedYear);
       } else {
-        // If neither environment nor socioeconomic, handle error or return.
         return;
       }
 
-      // Add region filter if needed
       if (!isCountrySelected) {
         query = query.eq("region.Region", selectedRegion);
       }
 
-      // top5Lowest => ascending = true, top5Highest => ascending = false
       const ascending = top5Lowest ? true : false;
       query = query.order(top5Metric, { ascending }).limit(5);
 
@@ -216,7 +235,6 @@ const Dashboard = () => {
         console.error("Error fetching top 5 data:", error.message);
         setTop5ChartData(null);
       } else if (data && data.length > 0) {
-        // Sort the data in memory (just to be sure we get exact top/bottom 5)
         const sorted = [...data].sort((a, b) => {
           const valA = a[top5Metric] ?? 0;
           const valB = b[top5Metric] ?? 0;
@@ -231,20 +249,17 @@ const Dashboard = () => {
 
         const metricLabelMap = {
           ndvi: "NDVI",
-          forest_area_percent: "Forest Area Percent",
+          forest_area_percentage: "Forest Area Percent",
           forest_area_km: "Forest Area KM",
-          max_temperature: "Max Temperature",
-          mean_temperature: "Mean Temperature",
-          min_temperature: "Min Temperature",
           carbon_emission: "Carbon Emission",
-          total_percipitation: "Total Percipitation",
-          gdp: "GDP",
           hdi: "HDI",
           fdi: "FDI",
           disaster_count: "Disaster Count",
           political_stability: "Political Stability",
           population_density: "Population Density",
-          corruption_index: "Corruption Index"
+          corruption_index: "Corruption Index",
+          tree_cover_loss: "Tree Cover Loss",
+          gross_carbon_emission: "Gross Carbon Emission"
         };
         const niceMetricName = metricLabelMap[top5Metric] || top5Metric;
 
@@ -279,23 +294,20 @@ const Dashboard = () => {
 
   const top5MetricOptions = [
     { value: "ndvi", label: "NDVI" },
-    { value: "forest_area_percent", label: "Forest Area Percent" },
+    { value: "forest_area_percentage", label: "Forest Area Percent" },
     { value: "forest_area_km", label: "Forest Area KM" },
-    { value: "max_temperature", label: "Max Temperature" },
-    { value: "mean_temperature", label: "Mean Temperature" },
-    { value: "min_temperature", label: "Min Temperature" },
     { value: "carbon_emission", label: "Carbon Emission" },
-    { value: "total_percipitation", label: "Total Percipitation" },
-    { value: "gdp", label: "GDP" },
     { value: "hdi", label: "HDI" },
     { value: "fdi", label: "FDI" },
     { value: "disaster_count", label: "Disaster Count" },
     { value: "political_stability", label: "Political Stability" },
     { value: "population_density", label: "Population Density" },
     { value: "corruption_index", label: "Corruption Index" },
+    { value: "tree_cover_loss", label: "Tree Cover Loss" },
+    { value: "gross_carbon_emission", label: "Gross Carbon Emission" },
   ];
 
-  const yearOptions = [2015, 2016, 2017, 2018, 2019, 2020, 2021];
+  const yearOptions = [2015, 2016, 2017, 2018, 2019, 2020];
 
   const canGenerate =
     top5Metric &&
@@ -308,64 +320,68 @@ const Dashboard = () => {
   // RENDER
   // --------------------------------------------
   return (
-    <div className="flex h-screen overflow-hidden">
-      {/* Sidebar */}
+    <div className="flex flex-col md:flex-row h-screen overflow-hidden">
+      {/*
+        FILTER SECTION:
+        - On desktop => normal sidebar on the left
+        - On mobile => full-width, offset from top ("top-16") to avoid navbar
+          and slides up if filterOpen=false
+      */}
       <div
         className={`
-          absolute
-          md:static
-          top-0
-          left-0
-          w-64
-          md:w-1/4
-          bg-white
-          shadow-md
-          p-4
-          h-screen
-          md:h-auto
-          transform
-          transition-transform
-          duration-300
-          z-40
-          ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
-          md:translate-x-0
+          bg-white shadow-md p-4 z-40
+          transition-transform duration-300
+          
+          // Desktop: pinned on left, 16rem wide, no transform
+          md:relative md:w-64 md:translate-y-0 md:h-auto
+          
+          // Mobile: full width, absolute, offset from the top
+          absolute w-full left-0 top-16
+          ${filterOpen ? "translate-y-0" : "-translate-y-full"}
         `}
+        style={{
+          // For mobile: fill the screen from top-16 downward
+          height: "calc(100vh - 4rem)", // e.g., if your navbar is ~4rem tall
+        }}
       >
-        {/* Close / Toggle Button (visible on mobile) */}
-        <div className="flex justify-end mb-2 md:hidden">
+        {/* MOBILE-ONLY: arrow at the BOTTOM to hide filter */}
+        <div className="md:hidden flex justify-end">
           <button
-            onClick={() => setSidebarOpen(false)}
-            className="text-gray-600 hover:text-gray-900"
+            onClick={() => setFilterOpen(false)}
+            className="text-xl text-gray-700 bg-gray-200 px-2 py-1 rounded mb-2"
           >
-            {/* Replace with any icon you prefer, e.g. Heroicons or FontAwesome */}
-            <span className="text-xl">⟩</span>
+            Hide ▲
           </button>
         </div>
 
-        <div className="flex items-center mb-4 flex-wrap">
-          <h1 className="text-xl font-bold mr-4">Filters</h1>
-          {/* Toggle Standard vs. Top 5 */}
-          <label className="mr-4 flex items-center">
-            <input
-              type="checkbox"
-              checked={filterMode === "standard"}
-              onChange={() => handleModeChange("standard")}
-            />
-            <span className="ml-1">Standard</span>
-          </label>
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              checked={filterMode === "top5"}
-              onChange={() => handleModeChange("top5")}
-            />
-            <span className="ml-1">Top 5</span>
-          </label>
+        {/* FILTER HEADERS & TOGGLES */}
+        {/* 
+          2) On Desktop, the “Filters” title and Standard/Top5 checkboxes
+             appear on the same line. 
+        */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 flex-wrap">
+          <h1 className="text-xl font-bold mr-4 mb-2 md:mb-0">Filters</h1>
+          <div className="flex items-center gap-4">
+            <label className="flex items-center">
+              <input
+                type="checkbox"
+                checked={filterMode === "standard"}
+                onChange={() => setFilterMode("standard")}
+              />
+              <span className="ml-1">Standard</span>
+            </label>
+            <label className="flex items-center">
+              <input
+                type="checkbox"
+                checked={filterMode === "top5"}
+                onChange={() => setFilterMode("top5")}
+              />
+              <span className="ml-1">Top 5</span>
+            </label>
+          </div>
         </div>
 
-        {/* -------------------------------------- */}
         {/* STANDARD MODE */}
-        {/* -------------------------------------- */}
         {filterMode === "standard" && (
           <>
             <CountrySelect
@@ -376,31 +392,37 @@ const Dashboard = () => {
             <MetricFilter
               metrics={[
                 "NDVI",
+                "Tree Cover Loss",
                 "Forest Area Percent",
                 "Forest Area KM",
-                "Max Temperature",
-                "Mean Temperature",
-                "Min Temperature",
                 "Carbon Emission",
-                "Total Percipitation",
-                "GDP",
+                "Gross Carbon Emission",
                 "HDI",
                 "FDI",
                 "Disaster Count",
                 "Political Stability",
                 "Population Density",
-                "Corruption Index"
+                "Corruption Index",
               ]}
               selectedMetric={tempMetric}
               onChange={setTempMetric}
             />
 
-            <button
-              onClick={handleAddSelection}
-              className="mt-4 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded"
-            >
-              Add Selection
-            </button>
+            {/* 1) Matching button sizes: use same classes & minimal width */}
+            <div className="mt-4 flex gap-2">
+              <button
+                onClick={handleAddSelection}
+                className="px-3 py-1 min-w-[100px] text-sm bg-green-600 hover:bg-green-700 text-white rounded"
+              >
+                Add Selection
+              </button>
+              <button
+                onClick={handleToggleYAxis}
+                className="px-3 py-1 min-w-[100px] text-sm bg-green-600 hover:bg-green-700 text-white rounded"
+              >
+                {restrictYAxis ? "See Trend" : "Lock Scale"}
+              </button>
+            </div>
 
             <div className="mt-8">
               <h2 className="text-lg font-semibold mb-2">Selections</h2>
@@ -422,12 +444,9 @@ const Dashboard = () => {
           </>
         )}
 
-        {/* -------------------------------------- */}
         {/* TOP 5 MODE */}
-        {/* -------------------------------------- */}
         {filterMode === "top5" && (
           <>
-            {/* Country vs Region */}
             <div className="flex items-center mb-4">
               <button
                 onClick={handleCountryClick}
@@ -450,7 +469,6 @@ const Dashboard = () => {
               </label>
             </div>
 
-            {/* Region dropdown if region is checked */}
             {regionChecked && (
               <div className="mb-4">
                 <select
@@ -468,7 +486,6 @@ const Dashboard = () => {
               </div>
             )}
 
-            {/* Metric selection */}
             <div className="mb-4">
               <label className="block font-semibold mb-1">Metric:</label>
               <select
@@ -485,7 +502,6 @@ const Dashboard = () => {
               </select>
             </div>
 
-            {/* Highest/Lowest */}
             <div className="flex items-center gap-4 mb-4">
               <label className="flex items-center">
                 <input
@@ -507,7 +523,6 @@ const Dashboard = () => {
               </label>
             </div>
 
-            {/* Year selection */}
             <div className="mb-4">
               <label className="block font-semibold mb-1">Year:</label>
               <select
@@ -524,7 +539,6 @@ const Dashboard = () => {
               </select>
             </div>
 
-            {/* Generate Button */}
             <button
               onClick={handleGenerateTop5}
               disabled={!canGenerate}
@@ -540,74 +554,98 @@ const Dashboard = () => {
         )}
       </div>
 
-      {/* The "Open Sidebar" button (only visible on mobile when sidebar is hidden) */}
-      {!sidebarOpen && (
+      {/* MOBILE-ONLY: show "Show Filter" arrow if filter is hidden */}
+      {!filterOpen && (
         <button
-          onClick={() => setSidebarOpen(true)}
-          className="absolute top-4 left-4 z-50 text-xl text-white md:hidden"
-        // You might style this differently, e.g., a round button with a background
+          onClick={() => setFilterOpen(true)}
+          className="md:hidden absolute top-20 right-4 z-50 text-xl text-white bg-gray-600 px-3 py-1 rounded"
         >
-          {/* Replace with an icon of your choice */}
-          <span className="bg-gray-700 p-2 rounded">⟨</span>
+          Show ▼
         </button>
       )}
 
-      {/* Main Content Area */}
-      {/* Use flex-col to stack charts, let them fill space */}
+      {/* MAIN CONTENT: chart area */}
       <div className="flex-1 p-8 flex flex-col gap-8 overflow-auto">
-        {/* STANDARD MODE: vertical stack of charts */}
+        {/* STANDARD MODE */}
         {filterMode === "standard" &&
           selections.map((item, index) => (
             <div key={index} className="w-full">
               {item.metric === "NDVI" && item.country && (
-                <CountryNDVI selectedCountry={item.country} />
+                <CountryNDVI
+                  selectedCountry={item.country}
+                  restrictYAxis={restrictYAxis}
+                />
+              )}
+              {item.metric === "Tree Cover Loss" && item.country && (
+                <TreeCoverLoss
+                  selectedCountry={item.country}
+                  restrictYAxis={restrictYAxis}
+                />
               )}
               {item.metric === "Forest Area Percent" && item.country && (
-                <ForestAreaPercent selectedCountry={item.country} />
+                <ForestAreaPercent
+                  selectedCountry={item.country}
+                  restrictYAxis={restrictYAxis}
+                />
               )}
               {item.metric === "Forest Area KM" && item.country && (
-                <ForestAreaKM selectedCountry={item.country} />
-              )}
-              {item.metric === "Max Temperature" && item.country && (
-                <MaxTemp selectedCountry={item.country} />
-              )}
-              {item.metric === "Mean Temperature" && item.country && (
-                <MeanTemp selectedCountry={item.country} />
-              )}
-              {item.metric === "Min Temperature" && item.country && (
-                <MinTemp selectedCountry={item.country} />
+                <ForestAreaKM
+                  selectedCountry={item.country}
+                  restrictYAxis={restrictYAxis}
+                />
               )}
               {item.metric === "Carbon Emission" && item.country && (
-                <CarbonEmission selectedCountry={item.country} />
+                <CarbonEmission
+                  selectedCountry={item.country}
+                  restrictYAxis={restrictYAxis}
+                />
               )}
-              {item.metric === "Total Percipitation" && item.country && (
-                <TotalPercipitation selectedCountry={item.country} />
-              )}
-              {item.metric === "GDP" && item.country && (
-                <CountryGDP selectedCountry={item.country} />
+              {item.metric === "Gross Carbon Emission" && item.country && (
+                <GrossCarbonEmission
+                  selectedCountry={item.country}
+                  restrictYAxis={restrictYAxis}
+                />
               )}
               {item.metric === "HDI" && item.country && (
-                <CountryHDI selectedCountry={item.country} />
+                <CountryHDI
+                  selectedCountry={item.country}
+                  restrictYAxis={restrictYAxis}
+                />
               )}
               {item.metric === "FDI" && item.country && (
-                <CountryFDI selectedCountry={item.country} />
+                <CountryFDI
+                  selectedCountry={item.country}
+                  restrictYAxis={restrictYAxis}
+                />
               )}
               {item.metric === "Disaster Count" && item.country && (
-                <DisasterCount selectedCountry={item.country} />
+                <DisasterCount
+                  selectedCountry={item.country}
+                  restrictYAxis={restrictYAxis}
+                />
               )}
               {item.metric === "Political Stability" && item.country && (
-                <PoliticalStability selectedCountry={item.country} />
+                <PoliticalStability
+                  selectedCountry={item.country}
+                  restrictYAxis={restrictYAxis}
+                />
               )}
               {item.metric === "Population Density" && item.country && (
-                <PopulationDensity selectedCountry={item.country} />
+                <PopulationDensity
+                  selectedCountry={item.country}
+                  restrictYAxis={restrictYAxis}
+                />
               )}
               {item.metric === "Corruption Index" && item.country && (
-                <CorruptionIndex selectedCountry={item.country} />
+                <CorruptionIndex
+                  selectedCountry={item.country}
+                  restrictYAxis={restrictYAxis}
+                />
               )}
             </div>
           ))}
 
-        {/* TOP 5 MODE: Bar chart (cover most of the screen) */}
+        {/* TOP 5 MODE */}
         {filterMode === "top5" && (
           <div className="w-full h-[75vh]">
             {top5ChartData ? (

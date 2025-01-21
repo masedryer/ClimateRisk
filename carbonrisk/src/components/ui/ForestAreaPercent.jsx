@@ -1,9 +1,10 @@
-// ForestAreaPercent Component (e.g., ForestAreaPercent.jsx)
-import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
-import ChartCard from "./Chartcard";
+"use client";
 
-const ForestAreaPercent = ({ selectedCountry }) => {
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase"; 
+import ChartCard from "./Chartcard"; // The ChartCard component
+
+const ForestAreaPercent = ({ selectedCountry, restrictYAxis }) => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -17,6 +18,7 @@ const ForestAreaPercent = ({ selectedCountry }) => {
 
       setLoading(true);
       try {
+        // 1) Fetch region ID
         const { data: regionData, error: regionError } = await supabase
           .from("region")
           .select("id")
@@ -29,17 +31,16 @@ const ForestAreaPercent = ({ selectedCountry }) => {
         }
 
         const countryId = regionData[0]?.id;
-
         if (!countryId) {
           console.error("Country ID not found");
           setLoading(false);
           return;
         }
 
-        // Fetch Forest Area Percent data
+        // 2) Fetch Forest Area Percent data
         const { data: metricData, error } = await supabase
-          .from("environment")
-          .select("Year, forest_area_percent") // Make sure column names match
+          .from("environmental2")
+          .select("Year, forest_area_percentage")
           .eq("country_id", countryId);
 
         if (error) {
@@ -48,31 +49,94 @@ const ForestAreaPercent = ({ selectedCountry }) => {
           return;
         }
 
-        // Format the data for ChartCard
+        // 3) Format data for ChartCard
         const formattedData = metricData.map((item) => ({
           year: item.Year,
-          value: item.forest_area_percent,
+          value: item.forest_area_percentage,
         }));
 
         setData(formattedData);
       } catch (err) {
         console.error("Unexpected error:", err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
-    if (selectedCountry) fetchData();
+    fetchData();
   }, [selectedCountry]);
 
   if (loading) return <p>Loading data...</p>;
 
-  return (
-    <ChartCard
-      metricName="Forest Area Percent"
-      metricData={data}
-      countryName={selectedCountry}
-    />
-  );
+  // If we have no data, just render a fallback
+  if (data.length === 0) {
+    return <p>No Forest Area Percent data for {selectedCountry}.</p>;
+  }
+
+  // ----------------------------------------------------------------
+  //  BUILD Y-AXIS SETTINGS
+  // ----------------------------------------------------------------
+  if (restrictYAxis) {
+    //
+    // LOCKED Y-axis: Forest Area Percent from 0.0 to 1.0 in steps of 0.2
+    //
+    const yAxisSettings = {
+      min: 0,
+      max: 100,
+      stepSize: 20,
+    };
+    return (
+      <ChartCard
+        metricName="Forest Area Percent"
+        metricData={data}
+        countryName={selectedCountry}
+        yAxisSettings={yAxisSettings}
+        yAxisLabel="Forest Area Percent (%)"
+      />
+    );
+  } else {
+    //
+    // AUTO-SCALE Y-axis: compute min and max from the actual data
+    //
+    let dataMin = Infinity;
+    let dataMax = -Infinity;
+    data.forEach((d) => {
+      if (d.value < dataMin) dataMin = d.value;
+      if (d.value > dataMax) dataMax = d.value;
+    });
+
+    // If data is all the same value, dataMin == dataMax;
+    // add a small offset to avoid a flat line
+    if (dataMin === dataMax) {
+      dataMin -= 0.01;
+      dataMax += 0.01;
+    }
+
+    // Add a margin around min and max so the line isn't pinned to edges
+    const margin = (dataMax - dataMin) * 0.1;
+    const dynamicMin = dataMin - margin;
+    const dynamicMax = dataMax + margin;
+
+    // We can also guess a stepSize. E.g., divide the range by 5
+    // so we get ~5 steps on the y-axis:
+    const stepSize = (dynamicMax - dynamicMin) / 5;
+
+    const yAxisSettings = {
+      min: dynamicMin,
+      max: dynamicMax,
+      stepSize: stepSize,
+    };
+
+    return (
+      <ChartCard
+        metricName="Forest Area Percent"
+        metricData={data}
+        countryName={selectedCountry}
+        yAxisSettings={yAxisSettings}
+        yAxisLabel="Forest Area Percent (%)"
+      />
+    );
+  }
 };
 
 export default ForestAreaPercent;
