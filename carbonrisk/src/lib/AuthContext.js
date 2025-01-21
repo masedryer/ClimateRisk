@@ -31,13 +31,12 @@ export const AuthProvider = ({ children }) => {
             } else {
                 setUserProfile(null);
             }
-            
-            // Handle email verification
+
             if (event === 'EMAIL_CONFIRMED') {
                 router.push('/dashboard');
                 router.refresh();
             }
-            
+
             setLoading(false);
         });
 
@@ -112,7 +111,7 @@ export const AuthProvider = ({ children }) => {
     const resetPassword = async (email) => {
         try {
             const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                redirectTo: `${window.location.origin}/auth/reset-password`,
+                redirectTo: `${window.location.origin}/reset-password`
             });
             if (error) throw error;
         } catch (error) {
@@ -120,10 +119,12 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const updatePassword = async (newPassword) => {
+    const updatePassword = async (token, newPassword) => {
         try {
             const { error } = await supabase.auth.updateUser({
                 password: newPassword
+            }, {
+                accessToken: token
             });
             if (error) throw error;
             router.push('/dashboard');
@@ -174,7 +175,6 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    
     return (
         <AuthContext.Provider value={{
             user,
