@@ -61,7 +61,7 @@ export default function Navbar() {
 
       {/* "Contact Us" Button - Positioned to the right with smaller font */}
       <Link
-        href="#contact"
+        href="/contact"
         className="hidden md:block text-lg text-white bg-green-600 hover:bg-green-700 px-4 py-2 rounded-full transition-colors"
       >
         Contact
