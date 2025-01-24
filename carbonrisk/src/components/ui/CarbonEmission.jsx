@@ -91,7 +91,7 @@ const CarbonEmission = ({ selectedCountry, restrictYAxis }) => {
         metricData={data}
         countryName={selectedCountry}
         yAxisSettings={yAxisSettings}
-        yAxisLabel="Carbon Emission (millions)"
+        yAxisLabel="Carbon Emission (MtCO2)"
       />
     );
   } else {
@@ -133,7 +133,7 @@ const CarbonEmission = ({ selectedCountry, restrictYAxis }) => {
         metricData={data}
         countryName={selectedCountry}
         yAxisSettings={yAxisSettings}
-        yAxisLabel="Carbon Emission (millions)"
+        yAxisLabel="Carbon Emission (MtCO2)"
       />
     );
   }

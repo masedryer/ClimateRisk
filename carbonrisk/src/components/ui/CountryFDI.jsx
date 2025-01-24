@@ -83,7 +83,7 @@ const FDI = ({ selectedCountry, restrictYAxis }) => {
     const yAxisSettings = {
       min: -150,
       max: 300,
-      stepSize: 0.2,
+      stepSize: 90,
     };
     return (
       <ChartCard
