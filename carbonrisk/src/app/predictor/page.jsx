@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ClipLoader } from "react-spinners";
 import {
   Card,
@@ -20,38 +20,104 @@ import "react-datepicker/dist/react-datepicker.css";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 
+import { createClient } from "@supabase/supabase-js";
+
 import "../globals.css";
 
+// Initialize Supabase client
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
+
 export default function RiskPredictor() {
+  const [countries, setCountries] = useState([]);
   const [selectedCountry, setSelectedCountry] = useState("");
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
-  const [carbonEmission, setCarbonEmission] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [riskScore, setRiskScore] = useState(null);
   const [isExporting, setIsExporting] = useState(false);
 
-  const countries = [
-    "Canada",
-    "Australia",
-    "Brazil",
-    "Germany",
-    "India",
-    "Japan",
-    "South Africa",
-    "Mexico",
-    "Argentina",
-    "United Kingdom",
-  ];
+  // Fetch countries from Supabase
+  useEffect(() => {
+    const fetchCountries = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("region")
+          .select("CountryName"); // Case-sensitive: Ensure column matches Supabase
+
+        if (error) {
+          console.error("Error fetching countries:", error.message);
+          return;
+        }
+
+        if (data) {
+          console.log("Fetched countries:", data); // Debug fetched data
+          setCountries(data.map((item) => item.CountryName)); // Extract CountryName from data
+        }
+      } catch (err) {
+        console.error("Unexpected error fetching countries:", err);
+      }
+    };
+
+    fetchCountries();
+  }, []);
+
+  const fetchRiskScore = async () => {
+    if (!selectedCountry || !startDate || !endDate) {
+      alert("Please select a country and valid start and end years.");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+
+      // Get country ID from region table
+      const { data: regionData, error: regionError } = await supabase
+        .from("region")
+        .select("id")
+        .eq("CountryName", selectedCountry) // Case-sensitive: Ensure column matches Supabase
+        .single();
+
+      if (regionError) throw new Error("Country not found in the database.");
+
+      const countryId = regionData.id;
+
+      // Fetch predictions for the specified year range
+      const { data: predictionData, error: predictionError } = await supabase
+        .from("prediction")
+        .select("adjusted_risk_score")
+        .eq("country_id", countryId)
+        .gte("Year", startDate.getFullYear())
+        .lte("Year", endDate.getFullYear());
+
+      if (predictionError) throw new Error("Error fetching prediction data.");
+
+      if (!predictionData || predictionData.length === 0) {
+        throw new Error("No risk data available for the selected period.");
+      }
+
+      // Calculate the average risk score
+      const totalScore = predictionData.reduce(
+        (sum, { adjusted_risk_score }) => sum + adjusted_risk_score,
+        0
+      );
+      const averageScore = totalScore / predictionData.length;
+      const roundedScore = Math.round(averageScore);
+
+      setRiskScore(roundedScore);
+    } catch (error) {
+      console.error(error.message);
+      alert("An error occurred while fetching risk data. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    setIsSubmitting(true);
-    setTimeout(() => {
-      const randomRiskScore = Math.floor(Math.random() * 10) + 1;
-      setRiskScore(randomRiskScore);
-      setIsSubmitting(false);
-    }, 3000);
+    fetchRiskScore();
   };
 
   const exportToPDF = async () => {
@@ -301,7 +367,8 @@ export default function RiskPredictor() {
                   yearItemNumber={9}
                   placeholderText="Select Start Year"
                   className="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                  minDate={new Date(1800, 0)}
+                  minDate={new Date(2002, 0)}
+                  maxDate={new Date(2050, 0)}
                   required
                 />
               </div>
@@ -317,7 +384,8 @@ export default function RiskPredictor() {
                   yearItemNumber={9}
                   placeholderText="Select End Year"
                   className="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                  minDate={new Date(2025, 0)}
+                  minDate={new Date(2002, 0)}
+                  maxDate={new Date(2050, 0)}
                   required
                 />
               </div>
@@ -431,10 +499,10 @@ export default function RiskPredictor() {
                       </div>
                       <div>
                         <p className="text-sm font-medium text-gray-500">
-                          Expected Carbon Emission
+                          Project End Year
                         </p>
                         <p className="mt-2 text-lg font-medium text-gray-900">
-                          {carbonEmission} tons CO2e/year
+                          {endDate ? endDate.getFullYear() : "-"}
                         </p>
                       </div>
                       <div>
