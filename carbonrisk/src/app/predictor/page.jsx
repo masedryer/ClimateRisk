@@ -2,18 +2,30 @@
 
 import React, { useState } from "react";
 import { ClipLoader } from "react-spinners";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { AlertTriangle, CheckCircle, AlertCircle, Download } from "lucide-react";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from "@/components/ui/card";
+import {
+  AlertTriangle,
+  CheckCircle,
+  AlertCircle,
+  Download,
+} from "lucide-react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 
 import "../globals.css";
 
 export default function RiskPredictor() {
   const [selectedCountry, setSelectedCountry] = useState("");
   const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
   const [carbonEmission, setCarbonEmission] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [riskScore, setRiskScore] = useState(null);
@@ -44,61 +56,69 @@ export default function RiskPredictor() {
 
   const exportToPDF = async () => {
     setIsExporting(true);
-    const resultsElement = document.getElementById('risk-results');
-    
+    const resultsElement = document.getElementById("risk-results");
+
     try {
       // First page - Results
       const canvas1 = await html2canvas(resultsElement, {
         scale: 2,
-        backgroundColor: '#ffffff'
+        backgroundColor: "#ffffff",
       });
-      const imgData1 = canvas1.toDataURL('image/png');
-      
+      const imgData1 = canvas1.toDataURL("image/png");
+
       // Initialize PDF
-      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdf = new jsPDF("p", "mm", "a4");
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
       const imgHeight1 = (canvas1.height * pageWidth) / canvas1.width;
-      
+
       // Add first page
-      pdf.addImage(imgData1, 'PNG', 0, 0, pageWidth, imgHeight1);
-      
+      pdf.addImage(imgData1, "PNG", 0, 0, pageWidth, imgHeight1);
+
       // Add explanation page
       pdf.addPage();
       pdf.setFontSize(16);
-      pdf.text('Risk Rating and Interpretation', 20, 20);
-      
+      pdf.text("Risk Rating and Interpretation", 20, 20);
+
       pdf.setFontSize(12);
-      pdf.text([
-        'The risk rating falls under four distinct ranges:',
-        '• 1.0-2.4: The project is highly achievable with minimal barriers',
-        '• 2.5-4.9: The project is moderately achievable',
-        '• 5.0-7.4: The project is challenging to achieve',
-        '• 7.5-10.0: The project is highly unlikely to be achievable'
-      ], 20, 40);
-      
-      pdf.text('Risk Factors That Affect Prediction Results:', 20, 90);
-      pdf.text([
-        '1. Environmental Risks',
-        '   • Temperature variations',
-        '   • Seasonal precipitation',
-        '   • Carbon emissions',
-        '2. Political Risks',
-        '   • Political stability',
-        '   • Regulatory framework',
-        '3. Economic Factors',
-        '   • Market conditions',
-        '   • Investment climate',
-        '4. NDVI (Normalized Difference Vegetation Index)',
-        '   • Vegetation health assessment',
-        '   • Land use changes monitoring'
-      ], 20, 100);
-      
-      pdf.save('risk-analysis-report.pdf');
+      pdf.text(
+        [
+          "The risk rating falls under four distinct ranges:",
+          "• 1.0-2.4: The project is highly achievable with minimal barriers",
+          "• 2.5-4.9: The project is moderately achievable",
+          "• 5.0-7.4: The project is challenging to achieve",
+          "• 7.5-10.0: The project is highly unlikely to be achievable",
+        ],
+        20,
+        40
+      );
+
+      pdf.text("Risk Factors That Affect Prediction Results:", 20, 90);
+      pdf.text(
+        [
+          "1. Environmental Risks",
+          "   • Temperature variations",
+          "   • Seasonal precipitation",
+          "   • Carbon emissions",
+          "2. Political Risks",
+          "   • Political stability",
+          "   • Regulatory framework",
+          "3. Economic Factors",
+          "   • Market conditions",
+          "   • Investment climate",
+          "4. NDVI (Normalized Difference Vegetation Index)",
+          "   • Vegetation health assessment",
+          "   • Land use changes monitoring",
+        ],
+        20,
+        100
+      );
+
+      pdf.save("risk-analysis-report.pdf");
     } catch (error) {
-      console.error('Error generating PDF:', error);
+      console.error("Error generating PDF:", error);
     }
-    
+
     setIsExporting(false);
   };
 
@@ -111,27 +131,40 @@ export default function RiskPredictor() {
         icon: <AlertTriangle className="w-6 h-6 text-red-600" />,
         message: (
           <div className="mt-6 p-6 border bg-white/90 backdrop-blur-sm rounded-xl shadow-lg max-w-lg mx-auto">
-            <h5 className="text-xl font-semibold text-red-700 mb-4">High Risk Assessment</h5>
+            <h5 className="text-xl font-semibold text-red-700 mb-4">
+              High Risk Assessment
+            </h5>
             <p className="text-base leading-relaxed text-gray-800 font-medium mb-4">
-              Your risk rating falls within the 8 and above range, indicating a high level of risk.
+              Your risk rating falls within the 8 and above range, indicating a
+              high level of risk.
             </p>
             <div className="space-y-4">
               <div className="p-4 bg-red-50 rounded-lg">
-                <h6 className="font-semibold text-red-800 mb-2">Key Risk Factors:</h6>
+                <h6 className="font-semibold text-red-800 mb-2">
+                  Key Risk Factors:
+                </h6>
                 <ul className="list-disc pl-4 space-y-2 text-gray-800">
-                  <li>Declining NDVI (Normalized Difference Vegetation Index)</li>
+                  <li>
+                    Declining NDVI (Normalized Difference Vegetation Index)
+                  </li>
                   <li>Political instability</li>
                   <li>Economic volatility</li>
                   <li>Poor governance</li>
                 </ul>
               </div>
               <p className="text-base leading-relaxed text-gray-800">
-                These elements contribute to an increased risk of project underperformance.{" "}
-                <a href="/learn-more" className="text-blue-600 hover:text-blue-800 font-semibold">Learn more →</a>
+                These elements contribute to an increased risk of project
+                underperformance.{" "}
+                <a
+                  href="/learn-more"
+                  className="text-blue-600 hover:text-blue-800 font-semibold"
+                >
+                  Learn more →
+                </a>
               </p>
             </div>
           </div>
-        )
+        ),
       };
     }
     if (score >= 5) {
@@ -142,13 +175,18 @@ export default function RiskPredictor() {
         icon: <AlertCircle className="w-6 h-6 text-yellow-600" />,
         message: (
           <div className="mt-6 p-6 border bg-white/90 backdrop-blur-sm rounded-xl shadow-lg max-w-lg mx-auto">
-            <h5 className="text-xl font-semibold text-yellow-700 mb-4">Moderate Risk Assessment</h5>
+            <h5 className="text-xl font-semibold text-yellow-700 mb-4">
+              Moderate Risk Assessment
+            </h5>
             <p className="text-base leading-relaxed text-gray-800 font-medium mb-4">
-              Your risk rating falls within the 5 to 7 range, indicating a moderate level of risk.
+              Your risk rating falls within the 5 to 7 range, indicating a
+              moderate level of risk.
             </p>
             <div className="space-y-4">
               <div className="p-4 bg-yellow-50 rounded-lg">
-                <h6 className="font-semibold text-yellow-800 mb-2">Contributing Factors:</h6>
+                <h6 className="font-semibold text-yellow-800 mb-2">
+                  Contributing Factors:
+                </h6>
                 <ul className="list-disc pl-4 space-y-2 text-gray-800">
                   <li>Slight fluctuations in NDVI</li>
                   <li>Moderate political uncertainty</li>
@@ -156,12 +194,18 @@ export default function RiskPredictor() {
                 </ul>
               </div>
               <p className="text-base leading-relaxed text-gray-800">
-                These risks should be monitored but are not expected to significantly impact performance.{" "}
-                <a href="/learn-more" className="text-blue-600 hover:text-blue-800 font-semibold">Learn more →</a>
+                These risks should be monitored but are not expected to
+                significantly impact performance.{" "}
+                <a
+                  href="/learn-more"
+                  className="text-blue-600 hover:text-blue-800 font-semibold"
+                >
+                  Learn more →
+                </a>
               </p>
             </div>
           </div>
-        )
+        ),
       };
     }
     return {
@@ -171,13 +215,18 @@ export default function RiskPredictor() {
       icon: <CheckCircle className="w-6 h-6 text-green-600" />,
       message: (
         <div className="mt-6 p-6 border bg-white/90 backdrop-blur-sm rounded-xl shadow-lg max-w-lg mx-auto">
-          <h5 className="text-xl font-semibold text-green-700 mb-4">Low Risk Assessment</h5>
+          <h5 className="text-xl font-semibold text-green-700 mb-4">
+            Low Risk Assessment
+          </h5>
           <p className="text-base leading-relaxed text-gray-800 font-medium mb-4">
-            Your risk rating falls within the 1 to 4 range, indicating a low level of risk.
+            Your risk rating falls within the 1 to 4 range, indicating a low
+            level of risk.
           </p>
           <div className="space-y-4">
             <div className="p-4 bg-green-50 rounded-lg">
-              <h6 className="font-semibold text-green-800 mb-2">Positive Indicators:</h6>
+              <h6 className="font-semibold text-green-800 mb-2">
+                Positive Indicators:
+              </h6>
               <ul className="list-disc pl-4 space-y-2 text-gray-800">
                 <li>Positive NDVI trends</li>
                 <li>Political stability</li>
@@ -187,11 +236,16 @@ export default function RiskPredictor() {
             </div>
             <p className="text-base leading-relaxed text-gray-800">
               Current conditions are conducive to successful outcomes.{" "}
-              <a href="/learn-more" className="text-blue-600 hover:text-blue-800 font-semibold">Learn more →</a>
+              <a
+                href="/learn-more"
+                className="text-blue-600 hover:text-blue-800 font-semibold"
+              >
+                Learn more →
+              </a>
             </p>
           </div>
         </div>
-      )
+      ),
     };
   };
 
@@ -209,7 +263,8 @@ export default function RiskPredictor() {
               Project Risk Predictor
             </CardTitle>
             <CardDescription className="text-gray-600 mt-2">
-              Analyze and predict potential risks for your environmental projects
+              Analyze and predict potential risks for your environmental
+              projects
             </CardDescription>
           </CardHeader>
 
@@ -246,21 +301,23 @@ export default function RiskPredictor() {
                   yearItemNumber={9}
                   placeholderText="Select Start Year"
                   className="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                  minDate={new Date(1800,0)}
+                  minDate={new Date(1800, 0)}
                   required
                 />
               </div>
-
-              <div className="space-y-4">
+              <div className="space-y-4 relative">
                 <label className="block text-sm font-medium text-gray-700">
-                  Expected Carbon Emission (tons CO2e/year)
+                  Project End Year
                 </label>
-                <input
-                  type="number"
-                  value={carbonEmission}
-                  onChange={(e) => setCarbonEmission(e.target.value)}
-                  placeholder="Enter expected carbon emission"
+                <DatePicker
+                  selected={endDate}
+                  onChange={(date) => setEndDate(date)}
+                  showYearPicker
+                  dateFormat="yyyy"
+                  yearItemNumber={9}
+                  placeholderText="Select End Year"
                   className="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  minDate={new Date(2025, 0)}
                   required
                 />
               </div>
@@ -297,16 +354,24 @@ export default function RiskPredictor() {
                     className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
                   >
                     <Download className="w-5 h-5" />
-                    <span>{isExporting ? 'Exporting...' : 'Export PDF'}</span>
+                    <span>{isExporting ? "Exporting..." : "Export PDF"}</span>
                   </button>
                 </div>
               </CardHeader>
               <CardContent className="p-8">
                 <div className="space-y-6">
-                  <div className={`flex items-center justify-between p-4 rounded-lg ${getRiskLevel(riskScore).bg}`}>
+                  <div
+                    className={`flex items-center justify-between p-4 rounded-lg ${
+                      getRiskLevel(riskScore).bg
+                    }`}
+                  >
                     <div className="flex items-center space-x-3">
                       {getRiskLevel(riskScore).icon}
-                      <span className={`font-semibold text-lg ${getRiskLevel(riskScore).color}`}>
+                      <span
+                        className={`font-semibold text-lg ${
+                          getRiskLevel(riskScore).color
+                        }`}
+                      >
                         {getRiskLevel(riskScore).level}
                       </span>
                     </div>
@@ -325,8 +390,8 @@ export default function RiskPredictor() {
                             riskScore >= 8
                               ? "#ef4444"
                               : riskScore >= 5
-                                ? "#f59e0b"
-                                : "#10b981",
+                              ? "#f59e0b"
+                              : "#10b981",
                         }}
                       />
                     </div>
@@ -337,31 +402,45 @@ export default function RiskPredictor() {
                   </div>
 
                   <div className="mt-8">
-                  <h4 className="text-2xl font-bold text-gray-900 mb-6">Risk Assessment Details</h4>
+                    <h4 className="text-2xl font-bold text-gray-900 mb-6">
+                      Risk Assessment Details
+                    </h4>
                     {getRiskLevel(riskScore).message}
                   </div>
 
                   <div className="mt-8">
-                    <h4 className="text-2xl font-bold text-gray-900 mb-6">Project Information</h4>
+                    <h4 className="text-2xl font-bold text-gray-900 mb-6">
+                      Project Information
+                    </h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-gray-50 rounded-lg">
                       <div>
-                        <p className="text-sm font-medium text-gray-500">Project Location</p>
-                        <p className="mt-2 text-lg font-medium text-gray-900">{selectedCountry}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-500">Project Start Year</p>
+                        <p className="text-sm font-medium text-gray-500">
+                          Project Location
+                        </p>
                         <p className="mt-2 text-lg font-medium text-gray-900">
-                          {startDate ? startDate.getFullYear() : '-'}
+                          {selectedCountry}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-gray-500">Expected Carbon Emission</p>
+                        <p className="text-sm font-medium text-gray-500">
+                          Project Start Year
+                        </p>
+                        <p className="mt-2 text-lg font-medium text-gray-900">
+                          {startDate ? startDate.getFullYear() : "-"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-500">
+                          Expected Carbon Emission
+                        </p>
                         <p className="mt-2 text-lg font-medium text-gray-900">
                           {carbonEmission} tons CO2e/year
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-gray-500">Analysis Date</p>
+                        <p className="text-sm font-medium text-gray-500">
+                          Analysis Date
+                        </p>
                         <p className="mt-2 text-lg font-medium text-gray-900">
                           {new Date().toLocaleDateString()}
                         </p>
@@ -370,7 +449,9 @@ export default function RiskPredictor() {
                   </div>
 
                   <div className="mt-8">
-                    <h4 className="text-2xl font-bold text-gray-900 mb-6">Recommendations</h4>
+                    <h4 className="text-2xl font-bold text-gray-900 mb-6">
+                      Recommendations
+                    </h4>
                     <div className="p-6 bg-blue-50 rounded-lg">
                       <ul className="space-y-4">
                         <li className="flex items-start">
@@ -378,7 +459,8 @@ export default function RiskPredictor() {
                             <CheckCircle className="w-6 h-6 text-blue-600" />
                           </div>
                           <p className="ml-3 text-blue-900">
-                            Regular monitoring of environmental indicators and NDVI trends
+                            Regular monitoring of environmental indicators and
+                            NDVI trends
                           </p>
                         </li>
                         <li className="flex items-start">
@@ -394,7 +476,8 @@ export default function RiskPredictor() {
                             <CheckCircle className="w-6 h-6 text-blue-600" />
                           </div>
                           <p className="ml-3 text-blue-900">
-                            Maintain detailed documentation of all project activities
+                            Maintain detailed documentation of all project
+                            activities
                           </p>
                         </li>
                         <li className="flex items-start">
