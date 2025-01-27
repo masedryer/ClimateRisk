@@ -416,15 +416,24 @@ export default function RiskPredictor() {
                 </label>
                 <DatePicker
                   selected={endDate}
-                  onChange={(date) => setEndDate(date)}
+                  onChange={(date) => {
+                    if (startDate && date < startDate) {
+                      alert("End year cannot be before start year.");
+                      return;
+                    }
+                    setEndDate(date);
+                  }}
                   showYearPicker
                   dateFormat="yyyy"
                   yearItemNumber={9}
                   placeholderText="Select End Year"
-                  className="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                  minDate={new Date(2002, 0)}
+                  className={`w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 ${
+                    !startDate ? "cursor-not-allowed bg-gray-100" : ""
+                  }`}
+                  minDate={startDate || new Date(2002, 0)} // Prevents selection before startDate
                   maxDate={new Date(2050, 0)}
                   required
+                  disabled={!startDate} // Disable end year until start year is selected
                 />
               </div>
 
