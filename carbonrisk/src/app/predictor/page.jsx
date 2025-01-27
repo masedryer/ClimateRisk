@@ -38,6 +38,7 @@ export default function RiskPredictor() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [riskScore, setRiskScore] = useState(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [imageUrl, setImageUrl] = useState("");
 
   // Fetch countries from Supabase
   useEffect(() => {
@@ -115,9 +116,46 @@ export default function RiskPredictor() {
     }
   };
 
-  const handleSubmit = (e) => {
+  const fetchImageUrl = async (countryName) => {
+    try {
+      console.log("Fetching image for:", countryName); // Debug log
+
+      // Attempt to generate signed URL
+      const { data, error } = await supabase.storage
+        .from("ndvi_image")
+        .createSignedUrl(`${countryName}.png`, 60 * 60 * 24); // 24-hour validity
+
+      if (error) {
+        console.error("Error generating signed URL:", error.message);
+        setImageUrl(""); // Reset URL on error
+        return;
+      }
+
+      setImageUrl(data.signedUrl); // Set signed URL on success
+      console.log("Signed URL generated:", data.signedUrl);
+    } catch (err) {
+      console.error("Unexpected error fetching image:", err);
+      setImageUrl("");
+    }
+  };
+
+  const listFiles = async () => {
+    const { data, error } = await supabase.storage.from("ndvi_image").list(); // List all files in the bucket root
+
+    if (error) {
+      console.error("Error listing files:", error.message);
+      return;
+    }
+
+    console.log("Files in bucket:", data);
+  };
+
+  listFiles();
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    fetchRiskScore();
+    await fetchRiskScore();
+    await fetchImageUrl(selectedCountry);
   };
 
   const exportToPDF = async () => {
@@ -563,6 +601,39 @@ export default function RiskPredictor() {
               </CardContent>
             </Card>
           </div>
+        )}
+        {imageUrl && (
+          <Card className="border-0 shadow-xl backdrop-blur-sm bg-white/90">
+            <CardHeader className="bg-white/90 rounded-t-lg border-b pb-4">
+              <CardTitle className="text-2xl font-bold text-gray-900">
+                NDVI Image for {selectedCountry}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-8">
+              <div className="space-y-4">
+                {/* Display Image */}
+                <a href={imageUrl} target="_blank" rel="noopener noreferrer">
+                  <img
+                    src={imageUrl}
+                    alt={`${selectedCountry} NDVI`}
+                    className="w-full h-auto rounded-lg shadow-lg cursor-pointer"
+                  />
+                </a>
+                {/* Download Button */}
+                <button
+                  onClick={() => {
+                    const link = document.createElement("a");
+                    link.href = imageUrl;
+                    link.download = `${selectedCountry}_NDVI.png`;
+                    link.click();
+                  }}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg shadow-md"
+                >
+                  Download Image
+                </button>
+              </div>
+            </CardContent>
+          </Card>
         )}
       </div>
     </div>
