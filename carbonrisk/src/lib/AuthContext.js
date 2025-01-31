@@ -1,3 +1,4 @@
+// 2. AuthContext.js
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
@@ -55,8 +56,22 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const signUp = async (email, password, userData) => {
+    const signUp = async (email, password, userData, captchaToken) => {
         try {
+            // Verify hCaptcha token
+            const captchaResponse = await fetch('/api/verify-captcha', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ token: captchaToken }),
+            });
+
+            const captchaData = await captchaResponse.json();
+            if (!captchaData.success) {
+                throw new Error('Captcha verification failed');
+            }
+
             const { data, error } = await supabase.auth.signUp({
                 email,
                 password,
@@ -93,8 +108,43 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const signIn = async (email, password) => {
+    const signInWithGoogle = async () => {
         try {
+            const { data, error } = await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    queryParams: {
+                        access_type: 'offline',
+                        prompt: 'consent',
+                        client_id: '135263384467-n14u02ci5micadg7rcl3rohct90lq4p1.apps.googleusercontent.com'
+                    },
+                    redirectTo: `${window.location.origin}/auth/callback`
+                }
+            });
+            
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            throw error;
+        }
+    };
+
+    const signIn = async (email, password, captchaToken) => {
+        try {
+            // Verify hCaptcha token
+            const captchaResponse = await fetch('/api/verify-captcha', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ token: captchaToken }),
+            });
+
+            const captchaData = await captchaResponse.json();
+            if (!captchaData.success) {
+                throw new Error('Captcha verification failed');
+            }
+
             const { data, error } = await supabase.auth.signInWithPassword({
                 email,
                 password
@@ -108,28 +158,52 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const signOut = async () => {
+        try {
+            const { error } = await supabase.auth.signOut();
+            if (error) throw error;
+            router.push('/login');
+            router.refresh();
+        } catch (error) {
+            throw error;
+        }
+    };
     const resetPassword = async (email) => {
         try {
             const { error } = await supabase.auth.resetPasswordForEmail(email, {
                 redirectTo: `${window.location.origin}/reset-password`
             });
             if (error) throw error;
+            return { success: true };
         } catch (error) {
+            console.error('Reset password error:', error);
             throw error;
         }
     };
 
     const updatePassword = async (token, newPassword) => {
         try {
-            const { error } = await supabase.auth.updateUser({
-                password: newPassword
-            }, {
-                accessToken: token
-            });
-            if (error) throw error;
+            console.log('Updating password with token:', token ? 'Present' : 'Missing');
+            
+            if (!token) {
+                throw new Error('Password reset token is missing');
+            }
+    
+            const { error } = await supabase.auth.updateUser(
+                { password: newPassword }
+            );
+            
+            console.log('Update password response:', error || 'Success');
+            
+            if (error) {
+                console.error('Update password error:', error);
+                throw error;
+            }
+            
             router.push('/dashboard');
             router.refresh();
         } catch (error) {
+            console.error('Caught update password error:', error);
             throw error;
         }
     };
@@ -149,17 +223,6 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const signOut = async () => {
-        try {
-            const { error } = await supabase.auth.signOut();
-            if (error) throw error;
-            router.push('/login');
-            router.refresh(); // Force a server refresh
-        } catch (error) {
-            throw error;
-        }
-    };
-
     const updateProfile = async (updates) => {
         try {
             const { error } = await supabase
@@ -169,7 +232,7 @@ export const AuthProvider = ({ children }) => {
 
             if (error) throw error;
             await fetchUserProfile(user.id);
-            router.refresh(); // Force a server refresh
+            router.refresh();
         } catch (error) {
             throw error;
         }
@@ -182,6 +245,7 @@ export const AuthProvider = ({ children }) => {
             loading,
             signUp,
             signIn,
+            signInWithGoogle,
             signOut,
             resetPassword,
             updatePassword,

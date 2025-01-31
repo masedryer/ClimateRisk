@@ -1,7 +1,6 @@
-// app/reset-password/page.jsx
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -18,21 +17,42 @@ const ResetPasswordPage = () => {
   const searchParams = useSearchParams();
   const { updatePassword } = useAuth();
 
+  // Add validation for token
+  useEffect(() => {
+    const token = searchParams.get('token');
+    if (!token) {
+      setError('Invalid or missing reset token. Please try requesting a new password reset.');
+    }
+  }, [searchParams]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    const token = searchParams.get('token');
+    
+    if (!token) {
+      setError('Invalid or missing reset token. Please try requesting a new password reset.');
+      return;
+    }
+
     if (password !== confirmPassword) {
       setError("Passwords don't match");
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters long");
       return;
     }
 
     try {
       setLoading(true);
       setError(null);
-      await updatePassword(password);
+      await updatePassword(token, password);
       router.push('/login?reset=success');
     } catch (error) {
-      setError(error.message);
+      console.error('Password reset error:', error);
+      setError(error.message || 'Failed to reset password. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -60,6 +80,7 @@ const ResetPasswordPage = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 className="mt-1"
                 placeholder="Enter new password"
+                minLength={6}
               />
             </div>
 
@@ -75,6 +96,7 @@ const ResetPasswordPage = () => {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 className="mt-1"
                 placeholder="Confirm new password"
+                minLength={6}
               />
             </div>
 
@@ -87,7 +109,7 @@ const ResetPasswordPage = () => {
             <Button
               type="submit"
               className="w-full"
-              disabled={loading}
+              disabled={loading || !searchParams.get('token')}
             >
               {loading ? 'Updating password...' : 'Update password'}
             </Button>

@@ -6,8 +6,10 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/componen
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Textarea } from '@/components/ui/textarea';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import HCaptcha from '@hcaptcha/react-hcaptcha';
 
 const SignUpPage = () => {
   const [formData, setFormData] = useState({
@@ -23,21 +25,83 @@ const SignUpPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [verificationSent, setVerificationSent] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState(null);
   const router = useRouter();
-  const { signUp, resendVerificationEmail } = useAuth();
+  const { signUp, signInWithGoogle, resendVerificationEmail } = useAuth();
+
+  const validateForm = () => {
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setError('Please enter a valid email address');
+      return false;
+    }
+
+    // Password validation
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    if (!passwordRegex.test(formData.password)) {
+      setError('Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character');
+      return false;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords don't match");
+      return false;
+    }
+
+    // Username validation
+    const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
+    if (!usernameRegex.test(formData.username)) {
+      setError('Username must be between 3-20 characters and can only contain letters, numbers, and underscores');
+      return false;
+    }
+
+    // Full name validation
+    if (formData.fullName.length < 2) {
+      setError('Please enter a valid full name');
+      return false;
+    }
+
+    // Phone number validation (optional)
+    if (formData.phoneNumber) {
+      const phoneRegex = /^\+?[\d\s-]{10,}$/;
+      if (!phoneRegex.test(formData.phoneNumber)) {
+        setError('Please enter a valid phone number');
+        return false;
+      }
+    }
+
+    // Date of birth validation
+    if (formData.dateOfBirth) {
+      const birthDate = new Date(formData.dateOfBirth);
+      const today = new Date();
+      const age = today.getFullYear() - birthDate.getFullYear();
+      if (age < 13) {
+        setError('You must be at least 13 years old to register');
+        return false;
+      }
+    }
+
+    return true;
+  };
 
   const handleChange = (e) => {
     setFormData(prev => ({
       ...prev,
       [e.target.name]: e.target.value
     }));
+    setError(null); // Clear error when user makes changes
   };
 
   const handleSignUp = async (e) => {
     e.preventDefault();
     
-    if (formData.password !== formData.confirmPassword) {
-      setError("Passwords don't match");
+    if (!captchaToken) {
+      setError("Please complete the captcha");
+      return;
+    }
+
+    if (!validateForm()) {
       return;
     }
 
@@ -46,9 +110,24 @@ const SignUpPage = () => {
       setError(null);
       await signUp(formData.email, formData.password, {
         fullName: formData.fullName,
-        bio: formData.bio
-      });
+        username: formData.username,
+        phoneNumber: formData.phoneNumber || null,
+        dateOfBirth: formData.dateOfBirth || null,
+        bio: formData.bio || ''
+      }, captchaToken);
       setVerificationSent(true);
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSignUp = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      await signInWithGoogle();
     } catch (error) {
       setError(error.message);
     } finally {
@@ -99,6 +178,27 @@ const SignUpPage = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
+          <Button
+            onClick={handleGoogleSignUp}
+            className="w-full mb-4 bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+          >
+            <img
+              src="/google-icon.svg"
+              alt="Google"
+              className="w-5 h-5 mr-2"
+            />
+            Continue with Google
+          </Button>
+
+          <div className="relative my-4">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-500">Or continue with email</span>
+            </div>
+          </div>
+
           <form onSubmit={handleSignUp} className="space-y-4">
             <div>
               <label htmlFor="email" className="block text-sm font-medium">
@@ -130,6 +230,9 @@ const SignUpPage = () => {
                 className="mt-1"
                 placeholder="Enter your password"
               />
+              <p className="text-xs text-gray-500 mt-1">
+                Must be at least 8 characters with 1 uppercase, 1 lowercase, 1 number, and 1 special character
+              </p>
             </div>
 
             <div>
@@ -164,19 +267,47 @@ const SignUpPage = () => {
               />
             </div>
 
+            <div>
+              <label htmlFor="username" className="block text-sm font-medium">
+                Username
+              </label>
+              <Input
+                id="username"
+                name="username"
+                type="text"
+                required
+                value={formData.username}
+                onChange={handleChange}
+                className="mt-1"
+                placeholder="Choose a username"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                3-20 characters, letters, numbers, and underscores only
+              </p>
+            </div>
+
+      
 
             <div>
               <label htmlFor="bio" className="block text-sm font-medium">
-                Bio
+                Bio (Optional)
               </label>
-              <textarea
+              <Textarea
                 id="bio"
                 name="bio"
                 value={formData.bio}
                 onChange={handleChange}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                rows="3"
+                className="mt-1"
                 placeholder="Tell us about yourself"
+                rows={3}
+              />
+            </div>
+
+            <div className="flex justify-center">
+              <HCaptcha
+                sitekey={process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY}
+                onVerify={(token) => setCaptchaToken(token)}
+                onExpire={() => setCaptchaToken(null)}
               />
             </div>
 
@@ -189,7 +320,7 @@ const SignUpPage = () => {
             <Button
               type="submit"
               className="w-full"
-              disabled={loading}
+              disabled={loading || !captchaToken}
             >
               {loading ? 'Creating account...' : 'Sign up'}
             </Button>
