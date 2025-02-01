@@ -14,11 +14,23 @@ import {
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 const TopFiveChartCard = ({
-  metricName,
-  topFiveData = [],
+  metricName,       // Expected to be something like "NDVI"
+  chartData,        // Preferred: already built chartData object
+  options,          // Chart.js options
+  topFiveData,      // Fallback: legacy array [{ country, value }, ...]
   xAxisLabel = "Countries",
-  yAxisLabel = "",
+  yAxisLabel = ""
 }) => {
+  // Force trimming and ensure we have a proper metric name.
+  let effectiveMetricName = (metricName || "").trim();
+  if (!effectiveMetricName && chartData && chartData.datasets && chartData.datasets[0]?.label) {
+    effectiveMetricName = chartData.datasets[0].label.replace(/^Top 5\s+/i, "").trim();
+  }
+  if (!effectiveMetricName) {
+    effectiveMetricName = "Unknown Metric";
+  }
+
+  // Source mapping using the effective metric name.
   const sourceMap = {
     "NDVI": "Source 1",
     "Carbon Emission": "Source 2",
@@ -33,37 +45,33 @@ const TopFiveChartCard = ({
     "Population Density": "Source 11",
     "Corruption Index": "Source 12",
   };
-  const citation = sourceMap[metricName] || "Source Unknown";
+  const citation = sourceMap[effectiveMetricName] || "Source Unknown";
 
-  // Extract labels and values from data
-  const labels = topFiveData.map((item) => item.country);
-  const values = topFiveData.map((item) => item.value);
-
-  const chartData = {
-    labels,
-    datasets: [
-      {
-        label: `Top 5 ${metricName}`,
-        data: values,
-        backgroundColor: "rgba(75, 192, 192, 0.6)",
-      },
-    ],
-  };
-
-  const options = {
-    responsive: true,
-    maintainAspectRatio: false,
-    scales: {
-      x: { title: { display: !!xAxisLabel, text: xAxisLabel } },
-      y: { title: { display: !!yAxisLabel, text: yAxisLabel }, beginAtZero: true },
-    },
-  };
+  // Build finalChartData from chartData if provided, or fallback to topFiveData.
+  let finalChartData = chartData;
+  if (!finalChartData && topFiveData) {
+    const labels = topFiveData.map((item) => item.country);
+    const values = topFiveData.map((item) => item.value);
+    finalChartData = {
+      labels,
+      datasets: [
+        {
+          label: `Top 5 ${effectiveMetricName}`,
+          data: values,
+          backgroundColor: "rgba(75, 192, 192, 0.6)",
+        },
+      ],
+    };
+  }
+  if (!finalChartData) {
+    finalChartData = { labels: [], datasets: [] };
+  }
 
   return (
-    <div className="p-4 pb-16 bg-white rounded-lg shadow-md w-full h-[800px] relative">
-      <h2 className="text-xl font-bold mb-4">Top 5 {metricName}</h2>
+    <div className="p-4 pb-16 bg-white rounded-lg shadow-md w-full h-[600px] relative">
+      <h2 className="text-xl font-bold mb-4">Top 5 {effectiveMetricName}</h2>
       <div className="h-full">
-        <Bar data={chartData} options={options} />
+        <Bar data={finalChartData} options={options} />
       </div>
       <div className="absolute bottom-2 right-2 text-xs text-gray-500">
         {citation}

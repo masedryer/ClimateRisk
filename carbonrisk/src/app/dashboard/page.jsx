@@ -49,6 +49,10 @@ ChartJS.register(
   LineElement
 );
 
+// New component imports for chart cards with citations
+import CompiledChartCard from "@/components/ui/CompiledChartCard";
+import TopFiveChartCard from "@/components/ui/TopFiveChartCard";
+
 /**
  * Axis labels for TOP 5 Bar Charts (y-axis).
  */
@@ -69,7 +73,6 @@ const metricAxisLabels = {
 
 /**
  * Y-axis scale ranges to match single-country charts (Lock Scale).
- * If a metric is not here, we fallback to [0, undefined].
  */
 const METRIC_SCALE_RANGES = {
   NDVI: { min: 0, max: 1 },
@@ -87,7 +90,7 @@ const METRIC_SCALE_RANGES = {
 };
 
 /**
- * Axis labels for multi-line COMPILED charts in standard mode.
+ * Axis labels for multi-line COMPILED charts.
  */
 const compiledAxisLabels = {
   NDVI: "NDVI (Normalised)",
@@ -191,7 +194,7 @@ const Dashboard = () => {
   const [compiledCharts, setCompiledCharts] = useState(null);
   const [compiledMode, setCompiledMode] = useState(false);
 
-  // If compiledMode is ON, recompile when selections change
+  // Recompile when selections change (if in compiled mode)
   useEffect(() => {
     if (compiledMode) {
       handleCompileData();
@@ -241,7 +244,6 @@ const Dashboard = () => {
         });
       }
     }
-
     setCompiledCharts(results);
   };
 
@@ -263,7 +265,7 @@ const Dashboard = () => {
       "Corruption Index",
     ];
 
-    // Map from user-friendly metric to DB column
+    // Map user-friendly metric to DB column
     const metricToColumn = {
       NDVI: "ndvi",
       "Tree Cover Loss": "tree_cover_loss",
@@ -318,28 +320,27 @@ const Dashboard = () => {
     }
     if (!data || data.length === 0) return null;
 
-    // Filter out rows < 2015
+    // Filter out rows before 2002
     const filteredRows = data.filter((row) => row.Year >= 2002);
 
-    // group by country
+    // Group by country
     const countryData = {};
     filteredRows.forEach((row) => {
       const cName = row.region?.CountryName;
       if (!cName) return;
       if (row[columnName] == null) return;
-
       if (!countryData[cName]) {
         countryData[cName] = [];
       }
       countryData[cName].push({ x: row.Year, y: row[columnName] });
     });
 
-    // sort each array by year
+    // Sort each array by year
     Object.values(countryData).forEach((arr) => {
       arr.sort((a, b) => a.x - b.x);
     });
 
-    // Build datasets
+    // Build datasets using a color list
     const colorList = [
       "#FF6384",
       "#36A2EB",
@@ -351,7 +352,6 @@ const Dashboard = () => {
       "#F1948A",
     ];
     let colorIndex = 0;
-
     const datasets = Object.keys(countryData).map((country) => {
       const color = colorList[colorIndex % colorList.length];
       colorIndex++;
@@ -372,87 +372,38 @@ const Dashboard = () => {
     return { datasets };
   };
 
-  // Renders compiled or single charts
+  // Helper to render the original (non‑compiled) chart for a single selection.
+  const renderSingleMetricChart = (metric, country) => {
+    if (metric === "NDVI") return <CountryNDVI selectedCountry={country} restrictYAxis={restrictYAxis} />;
+    if (metric === "Tree Cover Loss") return <TreeCoverLoss selectedCountry={country} restrictYAxis={restrictYAxis} />;
+    if (metric === "Forest Area Percent") return <ForestAreaPercent selectedCountry={country} restrictYAxis={restrictYAxis} />;
+    if (metric === "Forest Area KM") return <ForestAreaKM selectedCountry={country} restrictYAxis={restrictYAxis} />;
+    if (metric === "Carbon Emission") return <CarbonEmission selectedCountry={country} restrictYAxis={restrictYAxis} />;
+    if (metric === "Gross Carbon Emission") return <GrossCarbonEmission selectedCountry={country} restrictYAxis={restrictYAxis} />;
+    if (metric === "HDI") return <CountryHDI selectedCountry={country} restrictYAxis={restrictYAxis} />;
+    if (metric === "FDI") return <CountryFDI selectedCountry={country} restrictYAxis={restrictYAxis} />;
+    if (metric === "Disaster Count") return <DisasterCount selectedCountry={country} restrictYAxis={restrictYAxis} />;
+    if (metric === "Political Stability") return <PoliticalStability selectedCountry={country} restrictYAxis={restrictYAxis} />;
+    if (metric === "Population Density") return <PopulationDensity selectedCountry={country} restrictYAxis={restrictYAxis} />;
+    if (metric === "Corruption Index") return <CorruptionIndex selectedCountry={country} restrictYAxis={restrictYAxis} />;
+    return null;
+  };
+
+  // Render compiled charts; if only one country is selected for a metric, render the original chart.
   const renderCompiledCharts = () => {
     if (!compiledCharts) return null;
 
     return compiledCharts.map((item, idx) => {
       const { metric, countries, type, chartData } = item;
-
       if (type === "single") {
-        const c = countries[0];
         return (
           <div key={idx} className="w-full mb-8">
-            {metric === "NDVI" && (
-              <CountryNDVI selectedCountry={c} restrictYAxis={restrictYAxis} />
-            )}
-            {metric === "Tree Cover Loss" && (
-              <TreeCoverLoss
-                selectedCountry={c}
-                restrictYAxis={restrictYAxis}
-              />
-            )}
-            {metric === "Forest Area Percent" && (
-              <ForestAreaPercent
-                selectedCountry={c}
-                restrictYAxis={restrictYAxis}
-              />
-            )}
-            {metric === "Forest Area KM" && (
-              <ForestAreaKM selectedCountry={c} restrictYAxis={restrictYAxis} />
-            )}
-            {metric === "Carbon Emission" && (
-              <CarbonEmission
-                selectedCountry={c}
-                restrictYAxis={restrictYAxis}
-              />
-            )}
-            {metric === "Gross Carbon Emission" && (
-              <GrossCarbonEmission
-                selectedCountry={c}
-                restrictYAxis={restrictYAxis}
-              />
-            )}
-            {metric === "HDI" && (
-              <CountryHDI selectedCountry={c} restrictYAxis={restrictYAxis} />
-            )}
-            {metric === "FDI" && (
-              <CountryFDI selectedCountry={c} restrictYAxis={restrictYAxis} />
-            )}
-            {metric === "Disaster Count" && (
-              <DisasterCount
-                selectedCountry={c}
-                restrictYAxis={restrictYAxis}
-              />
-            )}
-            {metric === "Political Stability" && (
-              <PoliticalStability
-                selectedCountry={c}
-                restrictYAxis={restrictYAxis}
-              />
-            )}
-            {metric === "Population Density" && (
-              <PopulationDensity
-                selectedCountry={c}
-                restrictYAxis={restrictYAxis}
-              />
-            )}
-            {metric === "Corruption Index" && (
-              <CorruptionIndex
-                selectedCountry={c}
-                restrictYAxis={restrictYAxis}
-              />
-            )}
+            {renderSingleMetricChart(metric, countries[0])}
           </div>
         );
       } else {
-        // multi-line
-        const chartTitle = `Compiled ${metric} Data`;
-
-        // lock scale or see trend
-        let yMin, yMax;
-        let stepSize;
-
+        // Multi-country (compiled) chart.
+        let yMin, yMax, stepSize;
         if (restrictYAxis) {
           const lockedRange = METRIC_SCALE_RANGES[metric];
           if (lockedRange) {
@@ -464,57 +415,20 @@ const Dashboard = () => {
           }
           stepSize = METRIC_STEP_SIZES[metric] || undefined;
         } else {
-          // auto-scale => no fixed min/max, no step size
           yMin = undefined;
           yMax = undefined;
           stepSize = undefined;
         }
-
-        // *** FIX for repeated years ***
-        // add stepSize: 1 and parseInt in X-axis to ensure
-        // each integer year is only displayed once
-        const xAxis = {
-          type: "linear",
-          ticks: {
-            stepSize: 1,
-            callback: (value) => parseInt(value, 10),
-          },
-          title: { display: true, text: "Year" },
-        };
-
         const yAxisLabel = compiledAxisLabels[metric] || metric;
-
-        const options = {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            x: xAxis,
-            y: {
-              min: yMin,
-              max: yMax,
-              beginAtZero: false,
-              title: {
-                display: true,
-                text: yAxisLabel,
-              },
-              ticks: { stepSize },
-            },
-          },
-          plugins: {
-            legend: { position: "top" },
-            title: {
-              display: true,
-              text: chartTitle,
-            },
-          },
-        };
-
         return (
-          <div
-            key={idx}
-            className="w-full h-96 mb-8 bg-white p-4 rounded shadow"
-          >
-            <Line data={chartData} options={options} />
+          <div key={idx} className="w-full mb-8">
+            <CompiledChartCard
+              metricName={metric}
+              chartData={chartData}
+              yAxisSettings={{ min: yMin, max: yMax, stepSize }}
+              xAxisLabel="Year"
+              yAxisLabel={yAxisLabel}
+            />
           </div>
         );
       }
@@ -624,9 +538,7 @@ const Dashboard = () => {
         if (error) {
           console.error("Error fetching regions:", error.message);
         } else if (data) {
-          const unique = Array.from(new Set(data.map((r) => r.Region))).filter(
-            Boolean
-          );
+          const unique = Array.from(new Set(data.map((r) => r.Region))).filter(Boolean);
           setRegionOptions(unique.map((r) => ({ value: r, label: r })));
         }
       } catch (err) {
@@ -653,7 +565,7 @@ const Dashboard = () => {
   };
 
   // ---------------------------------------------------------------
-  // COUNTRY vs REGION
+  // COUNTRY vs. REGION
   // ---------------------------------------------------------------
   const handleCountryClick = () => {
     setIsCountrySelected(true);
@@ -749,36 +661,30 @@ const Dashboard = () => {
         return setTop5ChartData(null);
       }
 
-      // filter by region
+      // Filter by region if applicable
       let filtered = rawData;
       if (!isCountrySelected) {
-        filtered = filtered.filter(
-          (row) => row.region?.Region === selectedRegion
-        );
+        filtered = filtered.filter((row) => row.region?.Region === selectedRegion);
       }
 
-      // exclude null metrics
-      filtered = filtered.filter(
-        (row) => row[top5Metric] !== null && row[top5Metric] !== undefined
-      );
+      // Exclude rows with null metrics
+      filtered = filtered.filter((row) => row[top5Metric] !== null && row[top5Metric] !== undefined);
 
-      // sort
+      // Sort results
       if (top5Highest) {
         filtered.sort((a, b) => b[top5Metric] - a[top5Metric]);
       } else if (top5Lowest) {
         filtered.sort((a, b) => a[top5Metric] - b[top5Metric]);
       }
 
-      // slice top/bottom 5
+      // Slice top/bottom 5
       const top5data = filtered.slice(0, 5);
       if (top5data.length === 0) {
         return setTop5ChartData(null);
       }
 
-      // build chart
-      const labels = top5data.map((item, idx) => {
-        return item.region?.CountryName || `Item ${idx + 1}`;
-      });
+      // Build chart data for Top 5 chart
+      const labels = top5data.map((item, idx) => item.region?.CountryName || `Item ${idx + 1}`);
       const values = top5data.map((item) => item[top5Metric]);
 
       const metricLabelMap = {
@@ -796,12 +702,7 @@ const Dashboard = () => {
         gross_carbon_emission: "Gross Carbon Emission",
       };
       const niceMetricName = metricLabelMap[top5Metric] || top5Metric;
-
-      let contextName = "All Countries";
-      if (!isCountrySelected) {
-        contextName = selectedRegion;
-      }
-
+      let contextName = isCountrySelected ? "All Countries" : selectedRegion;
       const datasetLabel = `${
         top5Highest ? "Top 5 Highest" : "Top 5 Lowest"
       } ${niceMetricName} for ${contextName} in ${selectedYear}`;
@@ -846,9 +747,7 @@ const Dashboard = () => {
           absolute w-full left-0 top-16
           ${filterOpen ? "translate-y-0" : "-translate-y-full"}
         `}
-        style={{
-          height: "calc(100vh - 4rem)",
-        }}
+        style={{ height: "calc(100vh - 4rem)" }}
       >
         {/* MOBILE-ONLY: arrow to hide filter */}
         <div className="md:hidden flex justify-end">
@@ -1024,26 +923,17 @@ const Dashboard = () => {
                 <option value="">-- Select a Metric --</option>
                 {[
                   { value: "ndvi", label: "NDVI" },
-                  {
-                    value: "forest_area_percentage",
-                    label: "Forest Area Percent",
-                  },
+                  { value: "forest_area_percentage", label: "Forest Area Percent" },
                   { value: "forest_area_km", label: "Forest Area KM" },
                   { value: "carbon_emission", label: "Carbon Emission" },
                   { value: "hdi", label: "HDI" },
                   { value: "fdi", label: "FDI" },
                   { value: "disaster_count", label: "Disaster Count" },
-                  {
-                    value: "political_stability",
-                    label: "Political Stability",
-                  },
+                  { value: "political_stability", label: "Political Stability" },
                   { value: "population_density", label: "Population Density" },
                   { value: "corruption_index", label: "Corruption Index" },
                   { value: "tree_cover_loss", label: "Tree Cover Loss" },
-                  {
-                    value: "gross_carbon_emission",
-                    label: "Gross Carbon Emission",
-                  },
+                  { value: "gross_carbon_emission", label: "Gross Carbon Emission" },
                 ].map((m) => (
                   <option key={m.value} value={m.value}>
                     {m.label}
@@ -1081,10 +971,8 @@ const Dashboard = () => {
                 onChange={(e) => setSelectedYear(e.target.value)}
               >
                 <option value="">-- Select a Year --</option>
-                {[
-                  2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011,
-                  2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020,
-                ].map((y) => (
+                {[2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011,
+                  2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020].map((y) => (
                   <option key={y} value={y}>
                     {y}
                   </option>
@@ -1127,32 +1015,47 @@ const Dashboard = () => {
       <div className="flex-1 p-8 flex flex-col gap-8 overflow-auto">
         {/* STANDARD MODE */}
         {filterMode === "standard" && (
-          <>{compiledMode ? renderCompiledCharts() : renderStandardCharts()}</>
+          <>
+            {compiledMode ? renderCompiledCharts() : renderStandardCharts()}
+          </>
         )}
 
         {/* TOP 5 MODE */}
         {filterMode === "top5" && (
           <div className="w-full h-[75vh]">
             {top5ChartData ? (
-              <div className="bg-white p-4 rounded shadow w-full h-full">
-                <Bar
-                  data={top5ChartData}
+              <div className="w-full h-full">
+                <TopFiveChartCard
+                  metricName={
+                    (() => {
+                      const metricLabelMap = {
+                        ndvi: "NDVI",
+                        forest_area_percentage: "Forest Area Percent",
+                        forest_area_km: "Forest Area KM",
+                        carbon_emission: "Carbon Emission",
+                        hdi: "HDI",
+                        fdi: "FDI",
+                        disaster_count: "Disaster Count",
+                        political_stability: "Political Stability",
+                        population_density: "Population Density",
+                        corruption_index: "Corruption Index",
+                        tree_cover_loss: "Tree Cover Loss",
+                        gross_carbon_emission: "Gross Carbon Emission",
+                      };
+                      return metricLabelMap[top5Metric] || top5Metric;
+                    })()
+                  }
+                  chartData={top5ChartData}
                   options={{
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
                       x: {
-                        title: {
-                          display: true,
-                          text: "Countries",
-                        },
+                        title: { display: true, text: "Countries" },
                       },
                       y: {
                         beginAtZero: true,
-                        title: {
-                          display: true,
-                          text: metricAxisLabels[top5Metric] ?? "Value",
-                        },
+                        title: { display: true, text: metricAxisLabels[top5Metric] ?? "Value" },
                       },
                     },
                     plugins: {
@@ -1167,9 +1070,7 @@ const Dashboard = () => {
               </div>
             ) : (
               <p className="text-gray-500">
-                {loadingTop5
-                  ? "Loading..."
-                  : "No Top 5 data yet or no results found."}
+                {loadingTop5 ? "Loading..." : "No Top 5 data yet or no results found."}
               </p>
             )}
           </div>
