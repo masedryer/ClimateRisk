@@ -1,12 +1,27 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/AuthContext";
+import { supabase } from "@/lib/supabase";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [displayName, setDisplayName] = useState("User");
   const { user, signOut } = useAuth();
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (user) {
+        const { data, error } = await supabase.auth.getUser();
+        if (data?.user?.user_metadata?.display_name) {
+          setDisplayName(data.user.user_metadata.display_name);
+        }
+      }
+    };
+
+    fetchUserData();
+  }, [user]);
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
@@ -44,7 +59,7 @@ export default function Navbar() {
           <div className="relative">
             <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="flex items-center space-x-2 bg-gray-100 border-2 border-gray-800 px-3 py-2 rounded hover:bg-gray-200 transition-colors">
               <img src="/profile-icon.svg" alt="Profile" className="w-10 h-10" />
-              <span>Welcome, {user.user_metadata.display_name || "User"}</span>
+              <span>Welcome, {displayName}</span>
             </button>
             {isMenuOpen && (
               <div className="absolute right-0 mt-2 py-2 w-48 bg-white rounded-lg shadow-xl">
