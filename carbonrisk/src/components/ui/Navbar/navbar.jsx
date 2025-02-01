@@ -13,9 +13,30 @@ export default function Navbar() {
   useEffect(() => {
     const fetchUserData = async () => {
       if (user) {
-        const { data, error } = await supabase.auth.getUser();
-        if (data?.user?.user_metadata?.display_name) {
-          setDisplayName(data.user.user_metadata.display_name);
+        try {
+          // First try to get from auth metadata
+          const { data: authData } = await supabase.auth.getUser();
+          
+          // If that doesn't work, query the profiles table
+          if (!authData?.user?.user_metadata?.display_name) {
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('display_name')
+              .eq('id', user.id)
+              .single();
+            
+            if (profileData?.display_name) {
+              setDisplayName(profileData.display_name);
+            } else {
+              // Fallback to email if no display name found
+              setDisplayName(user.email.split('@')[0]);
+            }
+          } else {
+            setDisplayName(authData.user.user_metadata.display_name);
+          }
+        } catch (error) {
+          console.error('Error fetching user data:', error);
+          setDisplayName(user.email.split('@')[0]);
         }
       }
     };
