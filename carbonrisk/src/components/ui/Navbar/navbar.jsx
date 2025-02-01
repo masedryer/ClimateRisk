@@ -27,13 +27,9 @@ export default function Navbar() {
         <Link href="/dashboard" className="text-xl text-gray-800 hover:text-green-600 transition-colors">
           Dashboard
         </Link>
-   
-     
         <Link href="/predictor" className="text-xl text-gray-800 hover:text-green-600 transition-colors">
           ML Predictor
         </Link>
-     
-     
         <Link href="/" className="text-xl text-gray-800 hover:text-green-600 transition-colors">
           Docs
         </Link>
@@ -44,28 +40,21 @@ export default function Navbar() {
           Contact
         </Link>
 
-        {user ? (
-  <div className="relative">
-    <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="flex items-center space-x-2 bg-gray-100 border-2 border-gray-800 px-3 py-2 rounded hover:bg-gray-200 transition-colors">
-      <img src="/profile-icon.svg" alt="Profile" className="w-10 h-10" />
-      <span>Welcome, {user.email|| "User"}</span>  {/* Uses display_name or a fallback */}
-    </button>
-    {isMenuOpen && (
-      <div className="absolute right-0 mt-2 py-2 w-48 bg-white rounded-lg shadow-xl">
-        <button onClick={handleLogout} className="w-full text-left px-4 py-2 text-gray-800 hover:bg-gray-100">
-          Logout
-        </button>
-      </div>
-    )}
-  </div>
-) : (
-  <Link href="/login" className="text-lg text-gray-800 hover:text-green-600 transition-colors">
-
-  </Link>
-)}
-
-
-
+        {user && (
+          <div className="relative">
+            <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="flex items-center space-x-2 bg-gray-100 border-2 border-gray-800 px-3 py-2 rounded hover:bg-gray-200 transition-colors">
+              <img src="/profile-icon.svg" alt="Profile" className="w-10 h-10" />
+              <span>Welcome, {user.email || "User"}</span>
+            </button>
+            {isMenuOpen && (
+              <div className="absolute right-0 mt-2 py-2 w-48 bg-white rounded-lg shadow-xl">
+                <button onClick={handleLogout} className="w-full text-left px-4 py-2 text-gray-800 hover:bg-gray-100">
+                  Logout
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         <button
           className="md:hidden bg-gray-100 text-gray-800 border-2 border-gray-800 px-4 py-2 rounded hover:bg-gray-200 transition-colors"
