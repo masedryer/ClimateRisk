@@ -1,4 +1,3 @@
-// 2. AuthContext.js
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
@@ -56,22 +55,8 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const signUp = async (email, password, userData, captchaToken) => {
+    const signUp = async (email, password, userData) => {
         try {
-            // Verify hCaptcha token
-            const captchaResponse = await fetch('/api/verify-captcha', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ token: captchaToken }),
-            });
-
-            const captchaData = await captchaResponse.json();
-            if (!captchaData.success) {
-                throw new Error('Captcha verification failed');
-            }
-
             const { data, error } = await supabase.auth.signUp({
                 email,
                 password,
@@ -129,22 +114,8 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const signIn = async (email, password, captchaToken) => {
+    const signIn = async (email, password) => {
         try {
-            // Verify hCaptcha token
-            const captchaResponse = await fetch('/api/verify-captcha', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ token: captchaToken }),
-            });
-
-            const captchaData = await captchaResponse.json();
-            if (!captchaData.success) {
-                throw new Error('Captcha verification failed');
-            }
-
             const { data, error } = await supabase.auth.signInWithPassword({
                 email,
                 password
@@ -168,6 +139,7 @@ export const AuthProvider = ({ children }) => {
             throw error;
         }
     };
+
     const resetPassword = async (email) => {
         try {
             const { error } = await supabase.auth.resetPasswordForEmail(email, {

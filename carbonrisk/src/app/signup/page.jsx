@@ -9,8 +9,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Textarea } from '@/components/ui/textarea';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import HCaptcha from '@hcaptcha/react-hcaptcha';
-
 
 const SignUpPage = () => {
   const [formData, setFormData] = useState({
@@ -26,7 +24,6 @@ const SignUpPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [verificationSent, setVerificationSent] = useState(false);
-  const [captchaToken, setCaptchaToken] = useState(null);
   const router = useRouter();
   const { signUp, signInWithGoogle, resendVerificationEmail } = useAuth();
 
@@ -96,11 +93,6 @@ const SignUpPage = () => {
 
   const handleSignUp = async (e) => {
     e.preventDefault();
-    
-    if (!captchaToken) {
-      setError("Please complete the captcha");
-      return;
-    }
 
     if (!validateForm()) {
       return;
@@ -115,7 +107,7 @@ const SignUpPage = () => {
         phoneNumber: formData.phoneNumber || null,
         dateOfBirth: formData.dateOfBirth || null,
         bio: formData.bio || ''
-      }, captchaToken);
+      });
       setVerificationSent(true);
     } catch (error) {
       setError(error.message);
@@ -287,8 +279,6 @@ const SignUpPage = () => {
               </p>
             </div>
 
-      
-
             <div>
               <label htmlFor="bio" className="block text-sm font-medium">
                 Bio (Optional)
@@ -304,14 +294,6 @@ const SignUpPage = () => {
               />
             </div>
 
-            <div className="flex justify-center">
-              <HCaptcha
-                sitekey={process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY}
-                onVerify={(token) => setCaptchaToken(token)}
-                onExpire={() => setCaptchaToken(null)}
-              />
-            </div>
-
             {error && (
               <Alert variant="destructive">
                 <AlertDescription>{error}</AlertDescription>
@@ -321,7 +303,7 @@ const SignUpPage = () => {
             <Button
               type="submit"
               className="w-full"
-              disabled={loading || !captchaToken}
+              disabled={loading}
             >
               {loading ? 'Creating account...' : 'Sign up'}
             </Button>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/Button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import HCaptcha from '@hcaptcha/react-hcaptcha';
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({
@@ -17,19 +16,8 @@ const LoginPage = () => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [captchaToken, setCaptchaToken] = useState(null);
   const { signIn, signInWithGoogle } = useAuth();
   const router = useRouter();
-  const captchaRef = useRef(null);
-
-  useEffect(() => {
-    // Cleanup hCaptcha when the component unmounts
-    return () => {
-      if (captchaRef.current) {
-        captchaRef.current.resetCaptcha();
-      }
-    };
-  }, []);
 
   const handleChange = (e) => {
     setFormData(prev => ({
@@ -42,23 +30,12 @@ const LoginPage = () => {
     e.preventDefault();
     setError(null);
 
-    if (!captchaToken) {
-      setError("Please complete the captcha verification");
-      return;
-    }
-
     try {
       setLoading(true);
-      await signIn(formData.email, formData.password, captchaToken);
+      await signIn(formData.email, formData.password);
       router.push("/dashboard");
     } catch (error) {
       console.error('Login error details:', error);
-      
-      // Reset captcha on error
-      if (captchaRef.current) {
-        captchaRef.current.resetCaptcha();
-      }
-      setCaptchaToken(null);
       setError(error.message || "Authentication failed. Please try again.");
     } finally {
       setLoading(false);
@@ -75,20 +52,6 @@ const LoginPage = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const onCaptchaVerify = (token) => {
-    setCaptchaToken(token);
-  };
-
-  const onCaptchaExpire = () => {
-    setCaptchaToken(null);
-  };
-
-  const onCaptchaError = (error) => {
-    console.error('Captcha error:', error);
-    setError("Captcha verification failed. Please try again.");
-    setCaptchaToken(null);
   };
 
   return (
@@ -169,16 +132,6 @@ const LoginPage = () => {
               </Link>
             </div>
 
-            <div className="flex justify-center">
-              <HCaptcha
-                ref={captchaRef}
-                sitekey={process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY}
-                onVerify={onCaptchaVerify}
-                onExpire={onCaptchaExpire}
-                onError={onCaptchaError}
-              />
-            </div>
-
             {error && (
               <Alert variant="destructive">
                 <AlertDescription>{error}</AlertDescription>
@@ -187,7 +140,7 @@ const LoginPage = () => {
             <Button
               type="submit"
               className="w-full"
-              disabled={loading || !captchaToken}
+              disabled={loading}
             >
               {loading ? "Signing in..." : "Sign in"}
             </Button>
