@@ -92,7 +92,6 @@ export const AuthProvider = ({ children }) => {
             throw error;
         }
     };
-
     const signInWithGoogle = async () => {
         try {
             const { data, error } = await supabase.auth.signInWithOAuth({
@@ -106,13 +105,22 @@ export const AuthProvider = ({ children }) => {
                     redirectTo: `${window.location.origin}/auth/callback`
                 }
             });
-            
+    
             if (error) throw error;
+    
+            if (data.session) {
+                setUser(data.session.user);
+                fetchUserProfile(data.session.user.id).then(() => {
+                    router.push('/dashboard');
+                    router.refresh();
+                });
+            }
             return data;
         } catch (error) {
             throw error;
         }
     };
+    
 
     const signIn = async (email, password) => {
         try {
