@@ -103,7 +103,7 @@ export const AuthProvider = ({ children }) => {
                         prompt: 'consent',
                         client_id: '135263384467-n14u02ci5micadg7rcl3rohct90lq4p1.apps.googleusercontent.com'
                     },
-                    redirectTo: `${window.location.origin}/auth/callback`
+                   redirectTo: 'https://ycimfxsnhtqakxqaknmj.supabase.co/auth/v1/callback'
                 }
             });
             
