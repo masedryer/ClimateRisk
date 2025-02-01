@@ -60,7 +60,7 @@ export default function Navbar() {
   </div>
 ) : (
   <Link href="/login" className="text-lg text-gray-800 hover:text-green-600 transition-colors">
-    Login / Signup
+
   </Link>
 )}
 
