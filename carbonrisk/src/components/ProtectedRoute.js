@@ -1,3 +1,4 @@
+//ProtectedRoute.js
 "use client";
 
 import { useAuth } from '@/lib/AuthContext';
@@ -10,7 +11,7 @@ const ProtectedRoute = ({ children }) => {
   const pathname = usePathname(); // Correctly using usePathname from next/navigation
 
   // Define public paths that don't require authentication
-  const publicPaths = ['/login', '/signup', '/forgot-password', '/reset-password'];
+  const publicPaths = ['/login', '/signup', '/forgot-password', '/reset-password', '/about'];
 
   useEffect(() => {
     // Redirect to login if not loading, no user is authenticated, and the path is not one of the public paths

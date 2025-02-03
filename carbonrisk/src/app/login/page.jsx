@@ -147,12 +147,29 @@ const LoginPage = () => {
           </form>
         </CardContent>
         <CardFooter className="justify-center">
-          <p className="text-sm text-gray-600">
-            Don't have an account?{" "}
-            <Link href="/signup" className="text-blue-600 hover:text-blue-500">
-              Sign up
-            </Link>
-          </p>
+          <div className="text-center">
+            <p className="text-sm text-gray-600">
+              Don't have an account?{" "}
+              <Link href="/signup" className="text-blue-600 hover:text-blue-500 font-medium">
+                Sign up
+              </Link>
+            </p>
+
+            <div className="relative my-2">
+              <div className="w-full border-t border-gray-300"></div>
+            </div>
+
+            <p className="text-sm text-gray-600">
+              Curious about our platform?{" "}
+              <Link href="/about" className="text-blue-600 hover:text-blue-500 font-medium">
+                Learn more
+              </Link>
+              <span className="text-xs text-gray-500 block mt-1">
+                (No login required)
+              </span>
+            </p>
+          </div>
+
         </CardFooter>
       </Card>
     </div>
