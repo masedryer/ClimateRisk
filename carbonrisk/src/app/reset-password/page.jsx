@@ -20,7 +20,6 @@ const ResetPasswordPage = () => {
   // Validate token on component mount
   useEffect(() => {
     const token = searchParams.get('token');
-    console.log('Token from URL:', token); // Debugging: Check if token is present
     if (!token) {
       setError('Invalid or missing reset token. Please try requesting a new password reset.');
     }
