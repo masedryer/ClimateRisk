@@ -16,25 +16,29 @@ const ResetPasswordPage = () => {
   const router = useRouter();
   const { updatePassword } = useAuth();
 
+  // Validate token on component mount and any subsequent router changes
   useEffect(() => {
     const token = router.query.token;
     if (!token) {
       setError('Invalid or missing reset token. Please try requesting a new password reset.');
     }
-  }, [router.query.token]);  // Ensuring re-check on token update
+  }, [router.query]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
     const token = router.query.token;
-
+    
     if (!token) {
       setError('Invalid or missing reset token. Please try requesting a new password reset.');
       return;
     }
+
     if (password !== confirmPassword) {
       setError("Passwords don't match");
       return;
     }
+
     if (password.length < 6) {
       setError("Password must be at least 6 characters long");
       return;
@@ -78,6 +82,7 @@ const ResetPasswordPage = () => {
                 minLength={6}
               />
             </div>
+
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium">
                 Confirm New Password
@@ -93,11 +98,13 @@ const ResetPasswordPage = () => {
                 minLength={6}
               />
             </div>
+
             {error && (
               <Alert variant="destructive">
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
+
             <Button
               type="submit"
               className="w-full"
