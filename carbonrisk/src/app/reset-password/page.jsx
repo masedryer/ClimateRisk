@@ -2,11 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/AuthContext';
-import { useRouter } from 'next/router';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/Button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 const ResetPasswordPage = () => {
   const [password, setPassword] = useState('');
@@ -14,20 +14,21 @@ const ResetPasswordPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { updatePassword } = useAuth();
 
-  // Validate token on component mount and any subsequent router changes
+  // Validate token on component mount
   useEffect(() => {
-    const token = router.query.token;
+    const token = searchParams.get('token');
     if (!token) {
       setError('Invalid or missing reset token. Please try requesting a new password reset.');
     }
-  }, [router.query]);
+  }, [searchParams]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    const token = router.query.token;
+    const token = searchParams.get('token');
     
     if (!token) {
       setError('Invalid or missing reset token. Please try requesting a new password reset.');
@@ -108,7 +109,7 @@ const ResetPasswordPage = () => {
             <Button
               type="submit"
               className="w-full"
-              disabled={loading || !router.query.token}
+              disabled={loading || !searchParams.get('token')}
             >
               {loading ? 'Updating password...' : 'Update password'}
             </Button>
