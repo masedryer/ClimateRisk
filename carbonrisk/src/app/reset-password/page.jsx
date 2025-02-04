@@ -1,68 +1,58 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useAuth } from "@/lib/AuthContext";
-
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/Button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '@/lib/AuthContext';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/Button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 const ResetPasswordPage = () => {
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-
   const router = useRouter();
   const searchParams = useSearchParams();
   const { updatePassword } = useAuth();
 
+  // Add validation for token
   useEffect(() => {
-    // Check for 'access_token' in the query string
-    const accessToken = searchParams.get("access_token");
-    if (!accessToken) {
-      setError(
-        "Invalid or missing reset token. Please try requesting a new password reset."
-      );
+    const token = searchParams.get('token');
+    if (!token) {
+      setError('Invalid or missing reset token. Please try requesting a new password reset.');
     }
   }, [searchParams]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError(null);
-
-    // If there's no 'access_token', bail out
-    const accessToken = searchParams.get("access_token");
-    if (!accessToken) {
-      setError(
-        "Invalid or missing reset token. Please try requesting a new password reset."
-      );
-      setLoading(false);
+    
+    const token = searchParams.get('token');
+    
+    if (!token) {
+      setError('Invalid or missing reset token. Please try requesting a new password reset.');
       return;
     }
 
     if (password !== confirmPassword) {
       setError("Passwords don't match");
-      setLoading(false);
       return;
     }
 
     if (password.length < 6) {
       setError("Password must be at least 6 characters long");
-      setLoading(false);
       return;
     }
 
     try {
-      // updatePassword uses the existing Supabase session
-      await updatePassword(password);
-      router.push("/login?reset=success");
+      setLoading(true);
+      setError(null);
+      await updatePassword(token, password);
+      router.push('/login?reset=success');
     } catch (error) {
-      console.error("Password reset error:", error);
-      setError(error.message || "Failed to reset password. Please try again.");
+      console.error('Password reset error:', error);
+      setError(error.message || 'Failed to reset password. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -95,10 +85,7 @@ const ResetPasswordPage = () => {
             </div>
 
             <div>
-              <label
-                htmlFor="confirmPassword"
-                className="block text-sm font-medium"
-              >
+              <label htmlFor="confirmPassword" className="block text-sm font-medium">
                 Confirm New Password
               </label>
               <Input
@@ -119,8 +106,12 @@ const ResetPasswordPage = () => {
               </Alert>
             )}
 
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Updating password..." : "Update password"}
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={loading || !searchParams.get('token')}
+            >
+              {loading ? 'Updating password...' : 'Update password'}
             </Button>
           </form>
         </CardContent>
