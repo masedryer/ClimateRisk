@@ -163,39 +163,30 @@ export const AuthProvider = ({ children }) => {
 
     const updatePassword = async (token, newPassword) => {
         try {
-          console.log('Updating password with token:', token ? 'Present' : 'Missing');
-          
-          if (!token) {
-            throw new Error('Password reset token is missing');
-          }
-      
-          // Verify the token first
-          const { error: verifyError } = await supabase.auth.verifyOtp({
-            token,
-            type: 'recovery',
-          });
-      
-          if (verifyError) {
-            throw new Error('Invalid or expired token');
-          }
-      
-          // Update the password
-          const { error: updateError } = await supabase.auth.updateUser({
-            password: newPassword,
-          });
-      
-          if (updateError) {
-            throw updateError;
-          }
-      
-          console.log('Password updated successfully');
-          router.push('/dashboard');
-          router.refresh();
+            console.log('Updating password with token:', token ? 'Present' : 'Missing');
+            
+            if (!token) {
+                throw new Error('Password reset token is missing');
+            }
+    
+            const { error } = await supabase.auth.updateUser(
+                { password: newPassword }
+            );
+            
+            console.log('Update password response:', error || 'Success');
+            
+            if (error) {
+                console.error('Update password error:', error);
+                throw error;
+            }
+            
+            router.push('/dashboard');
+            router.refresh();
         } catch (error) {
-          console.error('Caught update password error:', error);
-          throw error;
+            console.error('Caught update password error:', error);
+            throw error;
         }
-      };
+    };
 
     const resendVerificationEmail = async (email) => {
         try {
