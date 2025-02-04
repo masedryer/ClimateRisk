@@ -161,41 +161,33 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-   const updatePassword = async (token, newPassword) => {
-  try {
-    console.log('Updating password with token:', token ? 'Present' : 'Missing');
+    const updatePassword = async (token, newPassword) => {
+        try {
+            console.log('Attempting password update with token:', token ? 'Present' : 'Missing');
+            
+            if (!token) {
+                throw new Error('Password reset token is missing.');
+            }
     
-    if (!token) {
-      throw new Error('Password reset token is missing');
-    }
-
-    // Verify the token first
-    const { error: verifyError } = await supabase.auth.verifyOtp({
-      token,
-      type: 'recovery',
-    });
-
-    if (verifyError) {
-      throw new Error('Invalid or expired token');
-    }
-
-    // Update the password
-    const { error: updateError } = await supabase.auth.updateUser({
-      password: newPassword,
-    });
-
-    if (updateError) {
-      throw updateError;
-    }
-
-    console.log('Password updated successfully');
-    router.push('/dashboard');
-    router.refresh();
-  } catch (error) {
-    console.error('Caught update password error:', error);
-    throw error;
-  }
-};
+            const { error } = await supabase.auth.resetPasswordWithToken({
+                token: token,
+                password: newPassword
+            });
+            
+            if (error) {
+                console.error('Failed to reset password:', error);
+                throw error;
+            }
+            
+            console.log('Password reset successful.');
+            router.push('/login?reset=success');
+            router.refresh();
+        } catch (error) {
+            console.error('Caught update password error:', error);
+            setError(error.message || 'Failed to reset password. Please try again.');
+        }
+    };
+    
 
     const resendVerificationEmail = async (email) => {
         try {
