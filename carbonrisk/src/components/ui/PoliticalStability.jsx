@@ -39,7 +39,7 @@ const PoliticalStability = ({ selectedCountry, restrictYAxis }) => {
 
         // 2) Fetch Political Stability data
         const { data: metricData, error } = await supabase
-          .from("socioeconomic")
+          .from("socio_economic")
           .select("Year, political_stability")
           .eq("country_id", countryId);
 
