@@ -17,7 +17,7 @@ const ResetPasswordPage = () => {
   const searchParams = useSearchParams();
   const { updatePassword } = useAuth();
 
-  // Validate token on component mount
+  // Add validation for token
   useEffect(() => {
     const token = searchParams.get('token');
     if (!token) {
@@ -27,9 +27,9 @@ const ResetPasswordPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     const token = searchParams.get('token');
-    
+
     if (!token) {
       setError('Invalid or missing reset token. Please try requesting a new password reset.');
       return;
