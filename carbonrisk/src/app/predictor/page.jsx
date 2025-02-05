@@ -104,7 +104,6 @@ const fetchCountryId = async (countryName) => {
   }
 };
 
-
 // Fetch risk score based on country ID and date range
 const fetchRiskScoreFromDB = async (countryId, startYear, endYear) => {
   try {
@@ -802,24 +801,40 @@ const fetchRiskData = async () => {
                     className="w-full h-auto rounded-lg shadow-lg cursor-pointer"
                   />
                 </a>
-                <h2>Purple Area:</h2>
-                <ul>
-               <li>These regions have the highest NDVI values, indicating dense, healthy vegetation with significant photosynthetic activity.
-                These areas should be prioritized for crop cultivation or to be protected.</li>
-                 </ul>
-                 
-                 <h2>Green Area:</h2>
-                 <ul>
-                 <li>Represent normal NDVI values, indicating moderately healthy vegetation or areas with mixed vegetation cover.</li>
-                <li>Can indicate transitional zones suitable for adaptive land use, such as agroforestry, which balances agricultural productivity and environmental conservation.</li>
-                </ul>
+                <div className="space-y-2">
+ 
 
-                <h2>Grey Area:</h2>
-                <ul>
-                <li>These areas have low NDVI values, signifying sparse or no vegetation.</li>
-               <li>It could include urban areas, bare soil, or degraded land. This area is required to address irrigation, pest control, or soil management.</li>
-             
-              </ul>
+  <div
+    className="h-3 rounded-full transition-all duration-500 border border-black"
+    style={{
+      width: "100%",
+      background: "linear-gradient(to right, white, lightgreen, green, #9966CC)",
+    }}
+  ></div>
+   <div className="flex justify-between text-sm font-semibold text-gray-700">
+    <span>High Risk</span>
+    <span>Low Risk</span>
+  </div>
+  <h3 className="text-lg font-semibold text-gray-900">Legend</h3>
+          <div className="grid grid-cols-2 gap-4"> {/* Use grid for layout */}
+            <div>
+              <div className="bg-[#9966CC] w-6 h-6 inline-block mr-2 rounded border border-black"></div> {/* Example color */}
+              Extremely Healthy Vegetation
+            </div>
+            <div>
+              <div className="bg-[#66B366]   w-6 h-6 inline-block mr-2 rounded border border-black"></div> {/* Example color */}
+              Healthy Vegetation
+            </div>
+            <div>
+              <div className="bg-[#E0FFE0] w-6 h-6 inline-block mr-2 rounded border border-black"></div> {/* Example color */}
+              Stressed Vegetation
+            </div>        
+            <div>
+              <div className="bg-[#ffffff] w-6 h-6 inline-block mr-2 rounded border border-black"></div> {/* Example color */}
+              Sparse Vegetation
+            </div>  
+                </div>            </div>
+
 
 
                 {/* Download Button */}
