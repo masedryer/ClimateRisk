@@ -6,30 +6,25 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/Button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 const ResetPasswordPage = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [accessToken, setAccessToken] = useState(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { updatePassword } = useAuth();
 
-  // Extract access token from URL hash on component mount
+  // Get access token from URL parameters
+  const accessToken = searchParams.get('access_token');
+
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const hash = window.location.hash;
-      const params = new URLSearchParams(hash.replace('#', '?'));
-      const token = params.get('access_token');
-      if (token) {
-        setAccessToken(token);
-      } else {
-        setError('Invalid or missing reset token. Please try requesting a new password reset.');
-      }
+    if (!accessToken) {
+      setError('Invalid or missing reset token. Please try requesting a new password reset.');
     }
-  }, []);
+  }, [accessToken]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
