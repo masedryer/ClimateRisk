@@ -164,21 +164,16 @@ export const AuthProvider = ({ children }) => {
 
     const updatePassword = async (token, newPassword) => {
         try {
-            const { error } = await supabase.auth.updateUser({
-                password: newPassword
-            }, {
-                accessToken: token
-            });
-            
+            const { error } = await supabase.auth.updateUser(token, { password: newPassword });
             if (error) throw error;
-            
-            router.push('/login');
+            router.push('/login?reset=success');
             router.refresh();
         } catch (error) {
             console.error('Update password error:', error);
             throw error;
         }
     };
+    
 
     const resendVerificationEmail = async (email) => {
         try {
