@@ -1,30 +1,63 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/lib/AuthContext';
+import { createClient } from '@supabase/supabase-js';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
+
+// Initialize Supabase client
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL, 
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
 
 const ResetPasswordPage = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [accessToken, setAccessToken] = useState(null);
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const { updatePassword } = useAuth();
-
-  // Get access token from URL parameters
-  const accessToken = searchParams.get('access_token');
 
   useEffect(() => {
-    if (!accessToken) {
-      setError('Invalid or missing reset token. Please try requesting a new password reset.');
-    }
-  }, [accessToken]);
+    // Token extraction logic
+    const extractToken = () => {
+      if (typeof window !== 'undefined') {
+        // First, check hash fragment
+        const hash = window.location.hash;
+        const hashToken = hash.split('access_token=')[1]?.split('&')[0];
+        
+        if (hashToken) {
+          console.log('Token found in hash', hashToken);
+          setAccessToken(hashToken);
+          return;
+        }
+
+        // Then, check search parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const searchToken = urlParams.get('access_token');
+        
+        if (searchToken) {
+          console.log('Token found in search params', searchToken);
+          setAccessToken(searchToken);
+          return;
+        }
+
+        // Log full URL for debugging
+        console.log('Full URL:', window.location.href);
+        console.log('Hash:', window.location.hash);
+        console.log('Search:', window.location.search);
+
+        // Set error if no token found
+        setError('Invalid or missing reset token. Please try requesting a new password reset.');
+      }
+    };
+
+    extractToken();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -47,7 +80,17 @@ const ResetPasswordPage = () => {
     try {
       setLoading(true);
       setError(null);
-      await updatePassword(accessToken, password);
+
+      // Use Supabase's updateUser method directly
+      const { error } = await supabase.auth.updateUser(accessToken, {
+        password: password
+      });
+
+      if (error) {
+        console.error('Supabase update error:', error);
+        throw error;
+      }
+
       router.push('/login?reset=success');
     } catch (error) {
       console.error('Password reset error:', error);
