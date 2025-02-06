@@ -39,7 +39,10 @@ export default function RiskPredictor() {
   const [riskScore, setRiskScore] = useState(null);
   const [isExporting, setIsExporting] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
+  const [riskFactors, setRiskFactors] = useState([]);
+  const [risktype, setRiskType] = useState([]);
 
+  
   // Fetch countries from Supabase
   useEffect(() => {
     const fetchCountries = async () => {
@@ -63,64 +66,200 @@ export default function RiskPredictor() {
     };
 
     fetchCountries();
+
+    
   }, []);
-
-  const fetchRiskScore = async () => {
-    if (!selectedCountry || !startDate || !endDate) {
-      alert("Please select a country and valid start and end years.");
-      return;
-    }
-
-    try {
-      setIsSubmitting(true);
-
-      // Get country ID from region table
-      const { data: regionData, error: regionError } = await supabase
-        .from("region")
-        .select("id")
-        .eq("CountryName", selectedCountry) // Case-sensitive: Ensure column matches Supabase
-        .single();
-
-      if (regionError) throw new Error("Country not found in the database.");
-
-      const countryId = regionData.id;
-
-      // Fetch predictions for the specified year range
-      const { data: predictionData, error: predictionError } = await supabase
-        .from("prediction")
-        .select("adjusted_risk_score")
-        .eq("country_id", countryId)
-        .gte("Year", startDate.getFullYear())
-        .lte("Year", endDate.getFullYear());
-
-      if (predictionError) throw new Error("Error fetching prediction data.");
-
-      if (!predictionData || predictionData.length === 0) {
-        throw new Error("No risk data available for the selected period.");
+  useEffect(() => {
+    if (riskScore !== null) {
+      if (riskScore <= 4) {
+        setRiskType("Low Risk");
+      } else if (riskScore > 4 && riskScore <= 7) {
+        setRiskType("Moderate Risk");
+      } else if (riskScore >= 8) {
+        setRiskType("High Risk");
       }
-
-      // Calculate the average risk score
-      const totalScore = predictionData.reduce(
-        (sum, { adjusted_risk_score }) => sum + adjusted_risk_score,
-        0
-      );
-      const averageScore = totalScore / predictionData.length;
-      const roundedScore = Math.round(averageScore);
-
-      setRiskScore(roundedScore);
-    } catch (error) {
-      console.error(error.message);
-      alert("An error occurred while fetching risk data. Please try again.");
-    } finally {
-      setIsSubmitting(false);
     }
-  };
+  }, [riskScore]); 
+  
+
+  // Fetch country ID based on country name
+const fetchCountryId = async (countryName) => {
+  try {
+    const { data, error } = await supabase
+      .from("region")
+      .select("id")
+      .eq("CountryName", countryName)
+      .single();
+
+    if (error) {
+      console.error("Error fetching country ID:", error.message);
+      return null;
+    }
+    console.log(data.id);
+    return data.id;
+
+  } catch (err) {
+    console.error("Unexpected error fetching country ID:", err);
+    return null;
+  }
+};
+
+// Fetch risk score based on country ID and date range
+const fetchRiskScoreFromDB = async (countryId, startYear, endYear) => {
+  try {
+    const { data, error } = await supabase
+      .from("prediction")
+      .select("adjusted_risk_score")
+      .eq("country_id", countryId)
+      .gte("Year", startYear)
+      .lte("Year", endYear);
+
+    if (error) {
+      console.error("Error fetching prediction data:", error.message);
+      return null;
+    }
+
+    if (!data || data.length === 0) {
+      console.warn("No risk data found for the selected period.");
+      return null;
+    }
+
+    // Calculate and return the average risk score
+    const totalScore = data.reduce((sum, { adjusted_risk_score }) => sum + adjusted_risk_score, 0);
+    console.log(Math.round(totalScore / data.length));
+    return Math.round(totalScore / data.length);
+  } catch (err) {
+    console.error("Unexpected error fetching risk score:", err);
+    return null;
+  }
+};
+const fetchRankingData = async (countryName) => {
+  console.log(countryName)
+  try {
+    const { data, error } = await supabase
+      .from("feature_ranking")
+      .select(
+        "ndvi_rank, forest_area_percentage_rank, forest_area_km_rank, political_stability_rank, fdi_rank, hdi_rank, population_density_rank, carbon_emission_rank, tree_cover_loss_rank, gross_carbon_emission_rank, disaster_count_rank, corruption_index_rank"
+      )
+      .eq("CountryName_x", countryName);
+
+    console.log(`🔍 Fetching ranking data for: ${countryName}`);
+    console.log("Raw API Response:", data);
+
+    if (error) {
+      console.error("❌ Error fetching rankings:", error.message);
+      return null;
+    }
+
+    if (!data || data.length === 0) {
+      console.warn(`⚠️ No ranking data found for ${countryName}`);
+      return null;
+    }
+
+    // Rename the columns
+    const renamedData = data.map((item) => ({
+      ...item,
+      foreign_direct_investment_rank: item.fdi_rank, // Rename fdi_rank
+      human_development_index_rank: item.hdi_rank, // Rename hdi_rank
+    }));
+
+    // Remove old column names
+    renamedData.forEach((item) => {
+      delete item.fdi_rank;
+      delete item.hdi_rank;
+    });
+
+    console.log("✅ Final Data:", renamedData[0]);
+    return renamedData[0]; // Return modified data
+  } catch (err) {
+    console.error("🔥 Unexpected error fetching rankings:", err);
+    return null;
+  }
+};
+
+
+// Process ranking data into a sorted array
+const processRankingData = (rankingData, riskScore) => {
+  if (!rankingData) return [];
+
+  const { Region, CountryName_y, ...rankings } = rankingData;
+
+  
+
+  const formattedData = Object.entries(rankings)
+  .map(([key, value]) => ({
+    name: key.replace("_rank", ""), 
+    value: value,
+  }))
+  .sort((a, b) => a.value - b.value);
+
+  console.log("✅ Processed Ranking Data:", formattedData);
+
+
+  let selectedFactors = [];
+  if (riskScore >= 8) {
+    selectedFactors = formattedData.slice(-3);
+  } else if (riskScore >= 5) {
+    selectedFactors = [...formattedData.slice(0, 2), formattedData.slice(-1)[0]];
+  } else {
+    selectedFactors = formattedData.slice(0, 3);
+  }
+
+  console.log(selectedFactors);
+  const factorNames = selectedFactors.map(factor => factor.name);
+  return selectedFactors.length ? selectedFactors : [];
+};
+
+
+
+
+// Main function to fetch risk score and ranking
+const fetchRiskData = async () => {
+  if (!selectedCountry || !startDate || !endDate) {
+    alert("Please select a country and valid start and end years.");
+    return;
+  }
+
+  try {
+    setIsSubmitting(true);
+
+    // Step 1: Fetch Country ID
+    const countryId = await fetchCountryId(selectedCountry);
+    if (!countryId) throw new Error("Country not found in the database.");
+
+    // Step 2: Fetch Risk Score
+    const riskScore = await fetchRiskScoreFromDB(
+      countryId,
+      startDate.getFullYear(),
+      endDate.getFullYear()
+    );
+    if (riskScore === null) throw new Error("No risk data available for the selected period.");
+
+    setRiskScore(riskScore);
+    console.log(riskScore)
+    // Step 3: Fetch Ranking Data
+    console.log("Fetching ranking data")
+    const rankingData = await fetchRankingData(selectedCountry);
+
+    console.log("Process ranking data")
+    const selectedFactors = processRankingData(rankingData, riskScore);
+
+    console.log("Update ranking data")
+    setRiskFactors(selectedFactors);
+
+  } catch (error) {
+    console.error(error.message);
+    alert("An error occurred while fetching risk data. Please try again.");
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
+
 
   const fetchImageUrl = async (countryName) => {
     try {
-      console.log("Fetching image for:", countryName); // Debug log
 
-      // Attempt to generate signed URL
       const { data, error } = await supabase.storage
         .from("ndvi_image")
         .createSignedUrl(`${countryName}.png`, 60 * 60 * 24); // 24-hour validity
@@ -132,7 +271,6 @@ export default function RiskPredictor() {
       }
 
       setImageUrl(data.signedUrl); // Set signed URL on success
-      console.log("Signed URL generated:", data.signedUrl);
     } catch (err) {
       console.error("Unexpected error fetching image:", err);
       setImageUrl("");
@@ -154,9 +292,22 @@ export default function RiskPredictor() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await fetchRiskScore();
-    await fetchImageUrl(selectedCountry);
+  
+    try {
+      setIsSubmitting(true);
+  
+      await fetchRiskData();
+  
+      await fetchImageUrl(selectedCountry);
+  
+    } catch (error) {
+      console.error("Error during submission:", error);
+      alert("An error occurred while processing your request. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+  
 
   const exportToPDF = async () => {
     setIsExporting(true);
@@ -174,7 +325,7 @@ export default function RiskPredictor() {
       const pdf = new jsPDF("p", "mm", "a4");
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
-      const imgHeight1 = (canvas1.height * pageWidth) / canvas1.width;
+      const imgHeight1 = (canvas1.height * pageWidth) / (canvas1.width*1.2);
 
       // Add first page
       pdf.addImage(imgData1, "PNG", 0, 0, pageWidth, imgHeight1);
@@ -184,35 +335,46 @@ export default function RiskPredictor() {
       pdf.setFontSize(16);
       pdf.text("Risk Rating and Interpretation", 20, 20);
 
-      pdf.setFontSize(12);
+      pdf.setFontSize(14);
       pdf.text(
         [
           "The risk rating falls under four distinct ranges:",
-          "• 1.0-2.4: The project is highly achievable with minimal barriers",
-          "• 2.5-4.9: The project is moderately achievable",
-          "• 5.0-7.4: The project is challenging to achieve",
-          "• 7.5-10.0: The project is highly unlikely to be achievable",
+          "• 1-4: The project is highly achievable with minimal barriers",
+          "• 4-7: The project is moderately achievable",
+          "• 8-10: The project is challenging to achieve",
         ],
         20,
         40
       );
 
       pdf.text("Risk Factors That Affect Prediction Results:", 20, 90);
+      pdf.setFontSize(8);
+
       pdf.text(
         [
-          "1. Environmental Risks",
-          "   • Temperature variations",
-          "   • Seasonal precipitation",
-          "   • Carbon emissions",
-          "2. Political Risks",
-          "   • Political stability",
-          "   • Regulatory framework",
-          "3. Economic Factors",
-          "   • Market conditions",
-          "   • Investment climate",
-          "4. NDVI (Normalized Difference Vegetation Index)",
-          "   • Vegetation health assessment",
-          "   • Land use changes monitoring",
+          "Environmental Risks",
+          "   • NDVI: Indicates vegetation health and density. Higher NDVI values reflect \nhealthier ecosystems that can store more carbon.",
+          "   • Forest Area Percentage: Highlights the proportion of land under forest cover.\n A higher percentage means more potential for conservation",
+          "     and carbon storage",
+          "   • Forest Area Km:Larger forest areas provide greater potential for large-scale\n REDD+ projects, making conservation efforts impactful",
+          "   • Carbon emissions: High emissions due to deforestation indicate priority regions \nfor REDD+ intervention to mitigate carbon release",
+          "   • Tree Cover Loss :Areas with high recent tree cover loss may be at higher risk \nof continued deforestation due to factors like illegal logging,",
+          "     agricultural expansion, or urban development. This can affect the long-term viability of reforestation efforts.",
+          "   • Gross Carbon Emission(%) :High gross carbon emissions contribute to global warming,\n which can lead to changes in local weather patterns, ",
+          "     including more frequent droughts, heatwaves, or unseasonal weather events. ",
+
+
+          "Socialeconomic Risks",
+          "   • HDI: Measures a country's development level, including health, education, and income.\n Higher HDI often correlates with better governance and ",
+          "     capacity to implement sustainable forest management practices.",
+          "   • FDI: Investment made by another country's company or individuals. Higher FDI means that more confidence on getting invested by other countries",
+          "   • Disaster Count: Natural disaster like drought, wildfires, extreme temperature, \ninfestation will not only affect the the tree survivalbility ",
+          "     and also cause  increase the risk of business disruptions, reducing investor confidence and deterring long-term economic development",
+          "   • population_density: Higher population density often increases deforestation pressure\n due to agriculture or urbanization",
+          "   • Political stability :Stable government able to provide policy consistency, effective\n enforcement, financial incentives, and opportunities ",
+          "     for collaboration. ",
+          "   • Corruption Index: Transparency in governance ensures the successful implementation of\n REDD+ and reforestation projects.",
+          
         ],
         20,
         100
@@ -224,135 +386,145 @@ export default function RiskPredictor() {
     }
 
     setIsExporting(false);
+
+
   };
 
-  const getRiskLevel = (score) => {
-    if (score >= 8) {
+  
+
+  const getRiskLevel = (score, riskFactors) => {
+    let performanceFactors = [];
+    if (!Array.isArray(riskFactors) || riskFactors.length === 0) {
+      console.warn("Invalid riskFactors, returning default value:", riskFactors);
       return {
-        level: "High Risk",
-        color: "text-red-600",
-        bg: "bg-red-50",
-        icon: <AlertTriangle className="w-6 h-6 text-red-600" />,
-        message: (
-          <div className="mt-6 p-6 border bg-white/90 backdrop-blur-sm rounded-xl shadow-lg max-w-lg mx-auto">
-            <h5 className="text-xl font-semibold text-red-700 mb-4">
-              High Risk Assessment
-            </h5>
-            <p className="text-base leading-relaxed text-gray-800 font-medium mb-4">
-              Your risk rating falls within the 8 and above range, indicating a
-              high level of risk.
-            </p>
-            <div className="space-y-4">
-              <div className="p-4 bg-red-50 rounded-lg">
-                <h6 className="font-semibold text-red-800 mb-2">
-                  Key Risk Factors:
-                </h6>
-                <ul className="list-disc pl-4 space-y-2 text-gray-800">
-                  <li>
-                    Declining NDVI (Normalized Difference Vegetation Index)
-                  </li>
-                  <li>Political instability</li>
-                  <li>Economic volatility</li>
-                  <li>Poor governance</li>
-                </ul>
-              </div>
-              <p className="text-base leading-relaxed text-gray-800">
-                These elements contribute to an increased risk of project
-                underperformance.{" "}
-                <a
-                  href="/learn-more"
-                  className="text-blue-600 hover:text-blue-800 font-semibold"
-                >
-                  Learn more →
-                </a>
-              </p>
-            </div>
-          </div>
-        ),
+        level: "Unknown",
+        color: "text-gray-600",
+        bg: "bg-gray-100",
+        icon: <AlertCircle className="w-6 h-6 text-gray-600" />,
+        message: <p className="text-gray-600">No data available.</p>,
       };
     }
-    if (score >= 5) {
-      return {
+  
+    if (riskFactors.length > 0) {
+      // Sort risk factors from best to worst (ascending order)
+      const sortedFactors = [...riskFactors].sort((a, b) => a.value - b.value);
+  
+      if (score <=4) {
+           // Low risk: Highlight 3 best factors as "Excellent performance in"
+           performanceFactors = sortedFactors.slice(0, 3).map(factor => ({
+            text: `Excellent performance in ${factor.name.replace(/_/g, " ")}`,
+            color: "text-green-700",
+        }));
+      } else if (score > 4 && score < 8) {
+        // Moderate risk: First 2 best factors "Excellent performance in", third best factor "Low performance in"
+        performanceFactors = [
+          ...sortedFactors.slice(0, 2).map(factor => ({
+            text: `Excellent performance in ${factor.name.replace(/_/g, " ")}`,
+            color: "text-yellow-700",
+          })),
+          {
+            text: `Low performance in ${sortedFactors[2].name.replace(/_/g, " ")}`,
+            color: "text-yellow-900",
+          },
+        ];
+      } else {
+    
+
+           // High risk: Highlight bottom 3 factors as "Low performance in"
+        performanceFactors = sortedFactors.slice(-3).map(factor => ({
+          text: `Low performance in ${factor.name.replace(/_/g, " ")}`,
+          color: "text-red-700",
+        }));
+      }
+    }
+  
+    let riskLevel = {}
+    if(score<=4){
+      
+    riskLevel={level: "Low Risk",
+      color: "text-green-600",
+      bg: "bg-green-50",
+      icon: <CheckCircle className="w-6 h-6 text-green-600" />,
+      message: (
+        <div className="mt-6 p-6 border bg-white/90 backdrop-blur-sm rounded-xl shadow-lg max-w-lg mx-auto">
+          <h5 className="text-xl font-semibold text-green-700 mb-4">Low Risk Assessment</h5>
+          <p className="text-base leading-relaxed text-gray-800 font-medium mb-4">
+            Your risk rating falls within the 1 to 4 range, indicating a low level of risk.
+          </p>
+          <div className="space-y-4">
+            <div className="p-4 bg-green-50 rounded-lg">
+              <h6 className="font-semibold text-green-800 mb-2">Key Performance Factors:</h6>
+              <ul className="list-disc pl-4 space-y-2 text-gray-800">
+                {performanceFactors.map((factor, index) => (
+                  <li key={index} className={factor.color}>{factor.text}</li>
+                ))}
+              </ul>
+            </div>
+           
+          </div>
+        </div>
+      ),
+    };
+    }
+     else if (score > 4 && score < 8) {
+      riskLevel = {
         level: "Moderate Risk",
         color: "text-yellow-600",
         bg: "bg-yellow-50",
         icon: <AlertCircle className="w-6 h-6 text-yellow-600" />,
         message: (
           <div className="mt-6 p-6 border bg-white/90 backdrop-blur-sm rounded-xl shadow-lg max-w-lg mx-auto">
-            <h5 className="text-xl font-semibold text-yellow-700 mb-4">
-              Moderate Risk Assessment
-            </h5>
+            <h5 className="text-xl font-semibold text-yellow-700 mb-4">Moderate Risk Assessment</h5>
             <p className="text-base leading-relaxed text-gray-800 font-medium mb-4">
-              Your risk rating falls within the 5 to 7 range, indicating a
-              moderate level of risk.
+              Your risk rating falls within the 5 to 7 range, indicating a moderate level of risk.
             </p>
             <div className="space-y-4">
               <div className="p-4 bg-yellow-50 rounded-lg">
-                <h6 className="font-semibold text-yellow-800 mb-2">
-                  Contributing Factors:
-                </h6>
+                <h6 className="font-semibold text-yellow-800 mb-2">Contributing Factors:</h6>
                 <ul className="list-disc pl-4 space-y-2 text-gray-800">
-                  <li>Slight fluctuations in NDVI</li>
-                  <li>Moderate political uncertainty</li>
-                  <li>Potential regulatory challenges</li>
+                  {performanceFactors.map((factor, index) => (
+                    <li key={index} className={factor.color}>{factor.text}</li>
+                  ))}
                 </ul>
               </div>
-              <p className="text-base leading-relaxed text-gray-800">
-                These risks should be monitored but are not expected to
-                significantly impact performance.{" "}
-                <a
-                  href="/learn-more"
-                  className="text-blue-600 hover:text-blue-800 font-semibold"
-                >
-                  Learn more →
-                </a>
-              </p>
+             
             </div>
           </div>
         ),
       };
     }
-    return {
-      level: "Low Risk",
-      color: "text-green-600",
-      bg: "bg-green-50",
-      icon: <CheckCircle className="w-6 h-6 text-green-600" />,
-      message: (
-        <div className="mt-6 p-6 border bg-white/90 backdrop-blur-sm rounded-xl shadow-lg max-w-lg mx-auto">
-          <h5 className="text-xl font-semibold text-green-700 mb-4">
-            Low Risk Assessment
-          </h5>
-          <p className="text-base leading-relaxed text-gray-800 font-medium mb-4">
-            Your risk rating falls within the 1 to 4 range, indicating a low
-            level of risk.
-          </p>
-          <div className="space-y-4">
-            <div className="p-4 bg-green-50 rounded-lg">
-              <h6 className="font-semibold text-green-800 mb-2">
-                Positive Indicators:
-              </h6>
-              <ul className="list-disc pl-4 space-y-2 text-gray-800">
-                <li>Positive NDVI trends</li>
-                <li>Political stability</li>
-                <li>Strong governance</li>
-                <li>Supportive regulatory framework</li>
-              </ul>
-            </div>
-            <p className="text-base leading-relaxed text-gray-800">
-              Current conditions are conducive to successful outcomes.{" "}
-              <a
-                href="/learn-more"
-                className="text-blue-600 hover:text-blue-800 font-semibold"
-              >
-                Learn more →
-              </a>
+  
+    else if (score >= 8) {
+      riskLevel = {
+        level: "High Risk",
+        color: "text-red-600",
+        bg: "bg-red-50",
+        icon: <AlertTriangle className="w-6 h-6 text-red-600" />,
+        message: (
+          <div className="mt-6 p-6 border bg-white/90 backdrop-blur-sm rounded-xl shadow-lg max-w-lg mx-auto">
+            <h5 className="text-xl font-semibold text-red-700 mb-4">High Risk Assessment</h5>
+            <p className="text-base leading-relaxed text-gray-800 font-medium mb-4">
+              Your risk rating falls within the 8 and above range, indicating a high level of risk.
             </p>
+            <div className="space-y-4">
+              <div className="p-4 bg-red-50 rounded-lg">
+                <h6 className="font-semibold text-red-800 mb-2">Key Risk Factors:</h6>
+                <ul className="list-disc pl-4 space-y-2 text-gray-800">
+                  {performanceFactors.map((factor, index) => (
+                    <li key={index} className={factor.color}>{factor.text}</li>
+                  ))}
+                </ul>
+              </div>
+   
+            </div>
           </div>
-        </div>
-      ),
-    };
-  };
+        ),
+      };
+    } 
+    return riskLevel;
 
+  };
+  
   return (
     <div
       className="min-h-screen bg-cover bg-center bg-fixed p-8"
@@ -487,7 +659,7 @@ export default function RiskPredictor() {
                           getRiskLevel(riskScore).color
                         }`}
                       >
-                        {getRiskLevel(riskScore).level}
+                        {(risktype)}
                       </span>
                     </div>
                     <span className="text-3xl font-bold text-gray-900">
@@ -520,7 +692,7 @@ export default function RiskPredictor() {
                     <h4 className="text-2xl font-bold text-gray-900 mb-6">
                       Risk Assessment Details
                     </h4>
-                    {getRiskLevel(riskScore).message}
+                    {getRiskLevel(riskScore, riskFactors).message}
                   </div>
 
                   <div className="mt-8">
@@ -612,7 +784,8 @@ export default function RiskPredictor() {
           </div>
         )}
         {imageUrl && (
-          <Card className="border-0 shadow-xl backdrop-blur-sm bg-white/90">
+          
+          <Card id="ndvi-card" className="border-0 shadow-xl backdrop-blur-sm bg-white/90">
             <CardHeader className="bg-white/90 rounded-t-lg border-b pb-4">
               <CardTitle className="text-2xl font-bold text-gray-900">
                 NDVI Image for {selectedCountry}
@@ -628,6 +801,42 @@ export default function RiskPredictor() {
                     className="w-full h-auto rounded-lg shadow-lg cursor-pointer"
                   />
                 </a>
+                <div className="space-y-2">
+ 
+
+  <div
+    className="h-3 rounded-full transition-all duration-500 border border-black"
+    style={{
+      width: "100%",
+      background: "linear-gradient(to right, white, lightgreen, green, #9966CC)",
+    }}
+  ></div>
+   <div className="flex justify-between text-sm font-semibold text-gray-700">
+    <span>High Risk</span>
+    <span>Low Risk</span>
+  </div>
+  <h3 className="text-lg font-semibold text-gray-900">Legend</h3>
+          <div className="grid grid-cols-2 gap-4"> {/* Use grid for layout */}
+            <div>
+              <div className="bg-[#9966CC] w-6 h-6 inline-block mr-2 rounded border border-black"></div> {/* Example color */}
+              Extremely Healthy Vegetation
+            </div>
+            <div>
+              <div className="bg-[#66B366]   w-6 h-6 inline-block mr-2 rounded border border-black"></div> {/* Example color */}
+              Healthy Vegetation
+            </div>
+            <div>
+              <div className="bg-[#E0FFE0] w-6 h-6 inline-block mr-2 rounded border border-black"></div> {/* Example color */}
+              Stressed Vegetation
+            </div>        
+            <div>
+              <div className="bg-[#ffffff] w-6 h-6 inline-block mr-2 rounded border border-black"></div> {/* Example color */}
+              Sparse Vegetation
+            </div>  
+                </div>            </div>
+
+
+
                 {/* Download Button */}
                 <button
                   onClick={() => {
@@ -638,13 +847,14 @@ export default function RiskPredictor() {
                   }}
                   className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg shadow-md"
                 >
-                  Download Image
+                  Enlarge Image
                 </button>
               </div>
             </CardContent>
           </Card>
         )}
       </div>
+      
     </div>
   );
 }
