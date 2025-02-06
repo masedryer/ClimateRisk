@@ -32,18 +32,18 @@ const TopFiveChartCard = ({
 
   // Source mapping using the effective metric name.
   const sourceMap = {
-    "NDVI": "Source 1",
-    "Carbon Emission": "Source 2",
-    "Gross Carbon Emission": "Source 3",
-    "Forest Area Percent": "Source 4",
-    "Forest Area KM": "Source 5",
-    "Tree Cover Loss": "Source 6",
-    "HDI": "Source 7",
-    "FDI": "Source 8",
-    "Disaster Count": "Source 9",
-    "Political Stability": "Source 10",
-    "Population Density": "Source 11",
-    "Corruption Index": "Source 12",
+   "NDVI": "https://code.earthengine.google.com/",
+    "Carbon Emission": "https://globalcarbonatlas.org/emissions/carbon-emissions",
+    "Gross Carbon Emission": "https://gfw.global/3rq1FFN",
+    "Forest Area Percent": "https://www.kaggle.com/datasets/webdevbadger/world-forest-area",
+    "Forest Area KM": "https://www.kaggle.com/datasets/webdevbadger/world-forest-area",
+    "Tree Cover Loss": "https://gfw.global/48pxTlg",
+    "HDI": "https://hdr.undp.org/data-center/human-development-index#/indicies/HDI",
+    "FDI": "https://databank.worldbank.org/source/world-development-indicators/Series/BX.KLT.DINV.WD.GD.ZS#",
+    "Disaster Count": "https://public.emdat.be/",
+    "Political Stability": "https://databank.worldbank.org/source/worldwide-governance-indicators/Series/PV.EST",
+    "Population Density": "https://data.worldbank.org/indicator/EN.POP.DNST",
+    "Corruption Index": "https://ourworldindata.org/grapher/political-corruption-index",
   };
   const citation = sourceMap[effectiveMetricName] || "Source Unknown";
 
@@ -73,8 +73,16 @@ const TopFiveChartCard = ({
       <div className="h-full">
         <Bar data={finalChartData} options={options} />
       </div>
-      <div className="absolute bottom-2 right-2 text-xs text-gray-500">
-        {citation}
+      <div className="absolute bottom-2 right-2 text-xs text-gray-500 break-words">
+        Source:{" "}
+        <a
+          href={citation}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline text-blue-500 hover:text-blue-700"
+        >
+          {citation}
+        </a>
       </div>
     </div>
   );
