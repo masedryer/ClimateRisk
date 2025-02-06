@@ -104,6 +104,7 @@ export const AuthProvider = ({ children }) => {
                     },
                     redirectTo: `${window.location.origin}/auth/callback`
                 }
+                
             });
     
             if (error) throw error;
@@ -163,27 +164,18 @@ export const AuthProvider = ({ children }) => {
 
     const updatePassword = async (token, newPassword) => {
         try {
-            console.log('Updating password with token:', token ? 'Present' : 'Missing');
+            const { error } = await supabase.auth.updateUser({
+                password: newPassword
+            }, {
+                accessToken: token
+            });
             
-            if (!token) {
-                throw new Error('Password reset token is missing');
-            }
-    
-            const { error } = await supabase.auth.updateUser(
-                { password: newPassword }
-            );
+            if (error) throw error;
             
-            console.log('Update password response:', error || 'Success');
-            
-            if (error) {
-                console.error('Update password error:', error);
-                throw error;
-            }
-            
-            router.push('/dashboard');
+            router.push('/login');
             router.refresh();
         } catch (error) {
-            console.error('Caught update password error:', error);
+            console.error('Update password error:', error);
             throw error;
         }
     };

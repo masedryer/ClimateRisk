@@ -6,31 +6,35 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/Button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 const ResetPasswordPage = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [accessToken, setAccessToken] = useState(null);
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { updatePassword } = useAuth();
 
-  // Add validation for token
+  // Extract access token from URL hash on component mount
   useEffect(() => {
-    const token = searchParams.get('token');
-    if (!token) {
-      setError('Invalid or missing reset token. Please try requesting a new password reset.');
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash;
+      const params = new URLSearchParams(hash.replace('#', '?'));
+      const token = params.get('access_token');
+      if (token) {
+        setAccessToken(token);
+      } else {
+        setError('Invalid or missing reset token. Please try requesting a new password reset.');
+      }
     }
-  }, [searchParams]);
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const token = searchParams.get('token');
-
-    if (!token) {
+    if (!accessToken) {
       setError('Invalid or missing reset token. Please try requesting a new password reset.');
       return;
     }
@@ -48,7 +52,7 @@ const ResetPasswordPage = () => {
     try {
       setLoading(true);
       setError(null);
-      await updatePassword(token, password);
+      await updatePassword(accessToken, password);
       router.push('/login?reset=success');
     } catch (error) {
       console.error('Password reset error:', error);
@@ -109,7 +113,7 @@ const ResetPasswordPage = () => {
             <Button
               type="submit"
               className="w-full"
-              disabled={loading || !searchParams.get('token')}
+              disabled={loading || !accessToken}
             >
               {loading ? 'Updating password...' : 'Update password'}
             </Button>
