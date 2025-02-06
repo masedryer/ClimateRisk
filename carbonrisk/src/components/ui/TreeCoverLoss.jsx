@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase"; 
 import ChartCard from "./Chartcard"; // The ChartCard component
 
-const NDVI = ({ selectedCountry, restrictYAxis }) => {
+const TreeCoverLoss = ({ selectedCountry, restrictYAxis }) => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -37,14 +37,14 @@ const NDVI = ({ selectedCountry, restrictYAxis }) => {
           return;
         }
 
-        // 2) Fetch NDVI data
+        // 2) Fetch Tree Cover Loss data
         const { data: metricData, error } = await supabase
           .from("environmental2")
-          .select("Year, ndvi")
+          .select("Year, tree_cover_loss")
           .eq("country_id", countryId);
 
         if (error) {
-          console.error("Error fetching NDVI data:", error.message);
+          console.error("Error fetching Tree Cover Loss data:", error.message);
           setLoading(false);
           return;
         }
@@ -52,7 +52,7 @@ const NDVI = ({ selectedCountry, restrictYAxis }) => {
         // 3) Format data for ChartCard
         const formattedData = metricData.map((item) => ({
           year: item.Year,
-          value: item.ndvi,
+          value: item.tree_cover_loss,
         }));
 
         setData(formattedData);
@@ -70,7 +70,7 @@ const NDVI = ({ selectedCountry, restrictYAxis }) => {
 
   // If we have no data, just render a fallback
   if (data.length === 0) {
-    return <p>No NDVI data for {selectedCountry}.</p>;
+    return <p>No Tree Cover Loss data for {selectedCountry}.</p>;
   }
 
   // ----------------------------------------------------------------
@@ -78,20 +78,20 @@ const NDVI = ({ selectedCountry, restrictYAxis }) => {
   // ----------------------------------------------------------------
   if (restrictYAxis) {
     //
-    // LOCKED Y-axis: NDVI from 0.0 to 1.0 in steps of 0.2
+    // LOCKED Y-axis: Tree Cover Loss from 0.0 to 1.0 in steps of 0.2
     //
     const yAxisSettings = {
       min: 0,
-      max: 1,
-      stepSize: 0.2,
+      max: 6000000,
+      stepSize: 1500000,
     };
     return (
       <ChartCard
-        metricName="NDVI"
+        metricName="Tree Cover Loss"
         metricData={data}
         countryName={selectedCountry}
         yAxisSettings={yAxisSettings}
-        yAxisLabel="NDVI (normalised)"
+        yAxisLabel="Tree Cover Loss (Mha)"
       />
     );
   } else {
@@ -129,14 +129,14 @@ const NDVI = ({ selectedCountry, restrictYAxis }) => {
 
     return (
       <ChartCard
-        metricName="NDVI"
+        metricName="Tree Cover Loss"
         metricData={data}
         countryName={selectedCountry}
         yAxisSettings={yAxisSettings}
-        yAxisLabel="NDVI (normalised)"
+        yAxisLabel="Tree Cover Loss (Mha)"
       />
     );
   }
 };
 
-export default NDVI;
+export default TreeCoverLoss;

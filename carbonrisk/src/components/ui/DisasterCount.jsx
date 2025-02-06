@@ -1,8 +1,10 @@
-import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase"; // Import Supabase client
-import ChartCard from "./Chartcard"; // Import ChartCard component
+"use client";
 
-const DisasterCount = ({ selectedCountry }) => {
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase"; 
+import ChartCard from "./Chartcard"; // The ChartCard component
+
+const DisasterCount = ({ selectedCountry, restrictYAxis }) => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -16,7 +18,7 @@ const DisasterCount = ({ selectedCountry }) => {
 
       setLoading(true);
       try {
-        // Fetch the region ID based on selectedCountry
+        // 1) Fetch region ID
         const { data: regionData, error: regionError } = await supabase
           .from("region")
           .select("id")
@@ -35,9 +37,10 @@ const DisasterCount = ({ selectedCountry }) => {
           return;
         }
 
+        // 2) Fetch Disaster Count data
         const { data: metricData, error } = await supabase
-          .from("socioeconomic") // Replace with your actual table name
-          .select("Year, disaster_count") // Replace with the actual columns from your DB
+          .from("socio_economic")
+          .select("Year, disaster_count")
           .eq("country_id", countryId);
 
         if (error) {
@@ -46,7 +49,7 @@ const DisasterCount = ({ selectedCountry }) => {
           return;
         }
 
-        // Format the data for ChartCard
+        // 3) Format data for ChartCard
         const formattedData = metricData.map((item) => ({
           year: item.Year,
           value: item.disaster_count,
@@ -55,23 +58,85 @@ const DisasterCount = ({ selectedCountry }) => {
         setData(formattedData);
       } catch (err) {
         console.error("Unexpected error:", err);
+      } finally {
+        setLoading(false);
       }
-
-      setLoading(false);
     };
 
-    if (selectedCountry) fetchData();
+    fetchData();
   }, [selectedCountry]);
 
   if (loading) return <p>Loading data...</p>;
 
-  return (
-    <ChartCard
-      metricName="Disaster count"
-      metricData={data}
-      countryName={selectedCountry}
-    />
-  );
+  // If we have no data, just render a fallback
+  if (data.length === 0) {
+    return <p>No Disaster Count data for {selectedCountry}.</p>;
+  }
+
+  // ----------------------------------------------------------------
+  //  BUILD Y-AXIS SETTINGS
+  // ----------------------------------------------------------------
+  if (restrictYAxis) {
+    //
+    // LOCKED Y-axis: Disaster Count from 0.0 to 1.0 in steps of 0.2
+    //
+    const yAxisSettings = {
+      min: 0,
+      max: 10,
+      stepSize: 2,
+    };
+    return (
+      <ChartCard
+        metricName="Disaster Count"
+        metricData={data}
+        countryName={selectedCountry}
+        yAxisSettings={yAxisSettings}
+        yAxisLabel="Disaster Count (count)"
+      />
+    );
+  } else {
+    //
+    // AUTO-SCALE Y-axis: compute min and max from the actual data
+    //
+    let dataMin = Infinity;
+    let dataMax = -Infinity;
+    data.forEach((d) => {
+      if (d.value < dataMin) dataMin = d.value;
+      if (d.value > dataMax) dataMax = d.value;
+    });
+
+    // If data is all the same value, dataMin == dataMax;
+    // add a small offset to avoid a flat line
+    if (dataMin === dataMax) {
+      dataMin -= 0.01;
+      dataMax += 0.01;
+    }
+
+    // Add a margin around min and max so the line isn't pinned to edges
+    const margin = (dataMax - dataMin) * 0.1;
+    const dynamicMin = dataMin - margin;
+    const dynamicMax = dataMax + margin;
+
+    // We can also guess a stepSize. E.g., divide the range by 5
+    // so we get ~5 steps on the y-axis:
+    const stepSize = (dynamicMax - dynamicMin) / 5;
+
+    const yAxisSettings = {
+      min: dynamicMin,
+      max: dynamicMax,
+      stepSize: stepSize,
+    };
+
+    return (
+      <ChartCard
+        metricName="Disaster Count"
+        metricData={data}
+        countryName={selectedCountry}
+        yAxisSettings={yAxisSettings}
+        yAxisLabel="Disaster Count (count)"
+      />
+    );
+  }
 };
 
 export default DisasterCount;
