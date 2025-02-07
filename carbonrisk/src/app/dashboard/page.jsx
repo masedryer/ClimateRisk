@@ -148,10 +148,7 @@ const Dashboard = () => {
 
   const handleAddSelection = () => {
     if (tempCountry && tempMetric && selections.length < 10) {
-      setSelections([
-        ...selections,
-        { country: tempCountry, metric: tempMetric },
-      ]);
+      setSelections([...selections, { country: tempCountry, metric: tempMetric }]);
     }
   };
 
@@ -170,15 +167,11 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchCountries = async () => {
       try {
-        const { data, error } = await supabase
-          .from("region")
-          .select("CountryName");
+        const { data, error } = await supabase.from("region").select("CountryName");
         if (error) {
           console.error("Error fetching countries:", error.message);
         } else if (data) {
-          const uniqueCountries = Array.from(
-            new Set(data.map((c) => c.CountryName))
-          );
+          const uniqueCountries = Array.from(new Set(data.map((c) => c.CountryName)));
           setCountries(uniqueCountries.map((c) => ({ value: c, label: c })));
         }
       } catch (err) {
@@ -228,20 +221,11 @@ const Dashboard = () => {
     const results = [];
     for (const [metric, countryList] of Object.entries(byMetric)) {
       if (countryList.length === 1) {
-        results.push({
-          metric,
-          countries: countryList,
-          type: "single",
-        });
+        results.push({ metric, countries: countryList, type: "single" });
       } else {
         const chartData = await fetchCompiledChartData(metric, countryList);
         if (!chartData) continue;
-        results.push({
-          metric,
-          countries: countryList,
-          type: "multi",
-          chartData,
-        });
+        results.push({ metric, countries: countryList, type: "multi", chartData });
       }
     }
     setCompiledCharts(results);
@@ -336,9 +320,7 @@ const Dashboard = () => {
     });
 
     // Sort each array by year
-    Object.values(countryData).forEach((arr) => {
-      arr.sort((a, b) => a.x - b.x);
-    });
+    Object.values(countryData).forEach((arr) => arr.sort((a, b) => a.x - b.x));
 
     // Build datasets using a color list
     const colorList = [
@@ -362,10 +344,7 @@ const Dashboard = () => {
         backgroundColor: color + "66",
         tension: 0.1,
         fill: false,
-        parsing: {
-          xAxisKey: "x",
-          yAxisKey: "y",
-        },
+        parsing: { xAxisKey: "x", yAxisKey: "y" },
       };
     });
 
@@ -392,7 +371,6 @@ const Dashboard = () => {
   // Render compiled charts; if only one country is selected for a metric, render the original chart.
   const renderCompiledCharts = () => {
     if (!compiledCharts) return null;
-
     return compiledCharts.map((item, idx) => {
       const { metric, countries, type, chartData } = item;
       if (type === "single") {
@@ -402,7 +380,6 @@ const Dashboard = () => {
           </div>
         );
       } else {
-        // Multi-country (compiled) chart.
         let yMin, yMax, stepSize;
         if (restrictYAxis) {
           const lockedRange = METRIC_SCALE_RANGES[metric];
@@ -439,76 +416,40 @@ const Dashboard = () => {
     return selections.map((item, index) => (
       <div key={index} className="w-full mb-8">
         {item.metric === "NDVI" && (
-          <CountryNDVI
-            selectedCountry={item.country}
-            restrictYAxis={restrictYAxis}
-          />
+          <CountryNDVI selectedCountry={item.country} restrictYAxis={restrictYAxis} />
         )}
         {item.metric === "Tree Cover Loss" && (
-          <TreeCoverLoss
-            selectedCountry={item.country}
-            restrictYAxis={restrictYAxis}
-          />
+          <TreeCoverLoss selectedCountry={item.country} restrictYAxis={restrictYAxis} />
         )}
         {item.metric === "Forest Area Percent" && (
-          <ForestAreaPercent
-            selectedCountry={item.country}
-            restrictYAxis={restrictYAxis}
-          />
+          <ForestAreaPercent selectedCountry={item.country} restrictYAxis={restrictYAxis} />
         )}
         {item.metric === "Forest Area KM" && (
-          <ForestAreaKM
-            selectedCountry={item.country}
-            restrictYAxis={restrictYAxis}
-          />
+          <ForestAreaKM selectedCountry={item.country} restrictYAxis={restrictYAxis} />
         )}
         {item.metric === "Carbon Emission" && (
-          <CarbonEmission
-            selectedCountry={item.country}
-            restrictYAxis={restrictYAxis}
-          />
+          <CarbonEmission selectedCountry={item.country} restrictYAxis={restrictYAxis} />
         )}
         {item.metric === "Gross Carbon Emission" && (
-          <GrossCarbonEmission
-            selectedCountry={item.country}
-            restrictYAxis={restrictYAxis}
-          />
+          <GrossCarbonEmission selectedCountry={item.country} restrictYAxis={restrictYAxis} />
         )}
         {item.metric === "HDI" && (
-          <CountryHDI
-            selectedCountry={item.country}
-            restrictYAxis={restrictYAxis}
-          />
+          <CountryHDI selectedCountry={item.country} restrictYAxis={restrictYAxis} />
         )}
         {item.metric === "FDI" && (
-          <CountryFDI
-            selectedCountry={item.country}
-            restrictYAxis={restrictYAxis}
-          />
+          <CountryFDI selectedCountry={item.country} restrictYAxis={restrictYAxis} />
         )}
         {item.metric === "Disaster Count" && (
-          <DisasterCount
-            selectedCountry={item.country}
-            restrictYAxis={restrictYAxis}
-          />
+          <DisasterCount selectedCountry={item.country} restrictYAxis={restrictYAxis} />
         )}
         {item.metric === "Political Stability" && (
-          <PoliticalStability
-            selectedCountry={item.country}
-            restrictYAxis={restrictYAxis}
-          />
+          <PoliticalStability selectedCountry={item.country} restrictYAxis={restrictYAxis} />
         )}
         {item.metric === "Population Density" && (
-          <PopulationDensity
-            selectedCountry={item.country}
-            restrictYAxis={restrictYAxis}
-          />
+          <PopulationDensity selectedCountry={item.country} restrictYAxis={restrictYAxis} />
         )}
         {item.metric === "Corruption Index" && (
-          <CorruptionIndex
-            selectedCountry={item.country}
-            restrictYAxis={restrictYAxis}
-          />
+          <CorruptionIndex selectedCountry={item.country} restrictYAxis={restrictYAxis} />
         )}
       </div>
     ));
@@ -668,7 +609,9 @@ const Dashboard = () => {
       }
 
       // Exclude rows with null metrics
-      filtered = filtered.filter((row) => row[top5Metric] !== null && row[top5Metric] !== undefined);
+      filtered = filtered.filter(
+        (row) => row[top5Metric] !== null && row[top5Metric] !== undefined
+      );
 
       // Sort results
       if (top5Highest) {
@@ -795,7 +738,8 @@ const Dashboard = () => {
           <>
             <CountrySelect
               countries={countries}
-              selectedCountry={tempCountry}
+              // Pass the selected option object rather than a string so the dropdown shows the selection.
+              selectedCountry={countries.find((option) => option.value === tempCountry) || null}
               onChange={(val) => setTempCountry(val?.value || "")}
             />
             <MetricFilter
@@ -1050,20 +994,12 @@ const Dashboard = () => {
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
-                      x: {
-                        title: { display: true, text: "Countries" },
-                      },
-                      y: {
-                        beginAtZero: true,
-                        title: { display: true, text: metricAxisLabels[top5Metric] ?? "Value" },
-                      },
+                      x: { title: { display: true, text: "Countries" } },
+                      y: { beginAtZero: true, title: { display: true, text: metricAxisLabels[top5Metric] ?? "Value" } },
                     },
                     plugins: {
                       legend: { position: "top" },
-                      title: {
-                        display: true,
-                        text: top5ChartData.datasets[0]?.label,
-                      },
+                      title: { display: true, text: top5ChartData.datasets[0]?.label },
                     },
                   }}
                 />
