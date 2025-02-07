@@ -40,10 +40,7 @@ const Mission = ({ src, title }) => {
           Our Mission
         </Typography>
         <Typography variant="h6">
-          We are committed to driving meaningful reforestation efforts through the power of cutting-edge AI 
-          and advanced analytics. By leveraging machine learning models to analyze climate data, predict risks, 
-          and optimize reforestation strategies, we aim to empower communities and organizations to restore ecosystems 
-          efficiently and sustainably.
+        We are committed to empowering users with intelligent, data-driven solutions that enhance decision-making and streamline workflows. By integrating powerful analytics, machine learning insights, and comprehensive documentation, our platform simplifies complexity and unlocks new opportunities. Our goal is to create an intuitive, accessible, and efficient ecosystem where users can seamlessly interact with data, gain valuable predictions, and leverage well-documented resources to maximize their potential.
         </Typography>
       </Box>
     </Box>
