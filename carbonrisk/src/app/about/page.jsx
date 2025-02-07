@@ -5,7 +5,7 @@ import Link from "next/link";
 import "../globals.css";
 import { Typography, Button, Box, useMediaQuery } from "@mui/material";
 import { styled, useTheme } from "@mui/system";
-import Mission from "@/components/ui/Mission"; // Ensure the path is correct
+import Mission from "@/components/ui/Mission"; // Ensure correct path
 
 const HeroSection = styled(Box)(({ theme }) => ({
   display: "flex",
@@ -45,7 +45,7 @@ const HeroImage = styled(Box)(({ theme }) => ({
   borderRadius: 12,
   width: "100%",
   [theme.breakpoints.down("md")]: {
-    display: "none", // Hides image on smaller screens
+    display: "none", // Hide image on smaller screens
   },
 }));
 
@@ -66,20 +66,6 @@ const ThreeColumnSection = styled(Box)(({ theme }) => ({
   margin: theme.spacing(4, "auto"),
   maxWidth: "1200px",
   position: "relative",
-  "&::before": {
-    content: '""',
-    position: "absolute",
-    top: 0,
-    left: "50%",
-    transform: "translateX(-50%)",
-    width: "100vw",
-    height: "100%",
-    backgroundImage: "url(/image1.png)",
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-    filter: "brightness(0.7) blur(8px)",
-    zIndex: -1,
-  },
   [theme.breakpoints.down("md")]: {
     flexDirection: "column",
   },
@@ -97,6 +83,12 @@ const Column = styled(Box)(({ theme }) => ({
   justifyContent: "space-between",
   gap: theme.spacing(3),
   minHeight: "450px",
+}));
+
+const ColumnTitle = styled(Typography)(({ theme }) => ({
+  fontWeight: 700,
+  textAlign: "center",
+  marginBottom: theme.spacing(2),
 }));
 
 const About = () => {
@@ -135,10 +127,10 @@ const About = () => {
           {/* Dashboard Card */}
           <Column>
             <ColumnTitle variant="h5">Customisable Dashboard</ColumnTitle>
-            <ColumnContent variant="body1">
+            <Typography variant="body1" align="center">
               Get a quick overview of key insights, metrics, and analytics in a
               centralized interface. Stay informed and track performance effortlessly.
-            </ColumnContent>
+            </Typography>
             <Link href="/dashboard" passHref>
               <Button variant="contained" color="secondary" size="large">
                 Go to Dashboard
@@ -149,10 +141,10 @@ const About = () => {
           {/* ML Predictor Card */}
           <Column>
             <ColumnTitle variant="h5">Machine Learning Predictor</ColumnTitle>
-            <ColumnContent variant="body1">
+            <Typography variant="body1" align="center">
               Input the given fields and sit back as our Machine Learning Predictor
               generates and forecasts the direction your project is headed for you.
-            </ColumnContent>
+            </Typography>
             <Link href="/predictor" passHref>
               <Button variant="contained" color="primary" size="large">
                 Use Predictor
@@ -163,11 +155,11 @@ const About = () => {
           {/* Docs Card */}
           <Column>
             <ColumnTitle variant="h5">Extensive Documentation</ColumnTitle>
-            <ColumnContent variant="body1">
+            <Typography variant="body1" align="center">
               Explore transparent data and the comprehensive technologies powering
               our project. Gain in-depth insights into our methodologies, frameworks,
               and system architecture.
-            </ColumnContent>
+            </Typography>
             <Link href="/docs" passHref>
               <Button variant="contained" color="secondary" size="large">
                 Read Docs

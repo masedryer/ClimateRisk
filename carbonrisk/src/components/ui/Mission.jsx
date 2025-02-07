@@ -46,12 +46,10 @@ const Mission = ({ src, title }) => {
           Our Mission
         </Typography>
         <Typography variant={isMobile ? "body1" : "h6"} paragraph>
-          We are committed to empowering users with intelligent, data-driven solutions
-          that enhance decision-making and streamline workflows.
+          We empower users with intelligent, data-driven solutions to enhance decision-making.
         </Typography>
         <Typography variant={isMobile ? "body1" : "h6"} paragraph>
-          By integrating powerful analytics, machine learning insights, and comprehensive
-          documentation, our platform simplifies complexity and unlocks new opportunities.
+          Our platform integrates analytics, machine learning, and documentation to simplify complexity and unlock new opportunities.
         </Typography>
       </Box>
     </Box>
