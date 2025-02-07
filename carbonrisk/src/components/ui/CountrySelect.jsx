@@ -8,6 +8,11 @@ export default function CountrySelect({
   selectedCountry,
   onChange,
 }) {
+  // Find the matching option from the list using the selectedCountry value.
+  const selectedOption = countries.find(
+    (option) => option.value === selectedCountry
+  ) || null;
+
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -15,7 +20,7 @@ export default function CountrySelect({
       </label>
       <Select
         options={countries}
-        value={selectedCountry}
+        value={selectedOption}
         onChange={onChange}
         placeholder="Select Country"
         className="rounded-lg"
