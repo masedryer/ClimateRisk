@@ -1,17 +1,18 @@
-/** @type {import('next').NextConfig} */
-const withMDX = require('@next/mdx')();
+import mdx from '@next/mdx';
+
+const withMDX = mdx();
 
 const nextConfig = withMDX({
   experimental: {
-    appDir: true, // Enables the new app directory structure
+    appDir: true,
   },
-  pageExtensions: ['js', 'jsx', 'mdx'], // Enables MDX support
+  pageExtensions: ['js', 'jsx', 'mdx'],
   async redirects() {
     return [
       {
-        source: "/", // Redirect root URL
-        destination: "/about", // Redirect to /about
-        permanent: false, // Use true for permanent redirects in production
+        source: "/",
+        destination: "/about",
+        permanent: false,
       },
     ];
   },
