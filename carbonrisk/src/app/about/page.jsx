@@ -1,6 +1,7 @@
 "use client"; // Ensure this is at the top for Client Component
 
 import React from "react";
+import Link from "next/link";
 import "../globals.css";
 import { Typography, Button, Box } from "@mui/material";
 import { styled } from "@mui/system";
@@ -139,6 +140,7 @@ const About = () => {
         {" "}
         {/* Replaced Container with Box */}
         <ThreeColumnSection>
+          {/* Dashboard Card */}
           <Column>
             <IconWrapper>
               <svg
@@ -158,18 +160,19 @@ const About = () => {
                 />
               </svg>
             </IconWrapper>
-            <ColumnTitle variant="h5">Amount of Project Risks</ColumnTitle>
-
+            <ColumnTitle variant="h5">Customisable Dashboard</ColumnTitle>
             <ColumnContent variant="body1">
-              Discover the distribution of project risks through our intuitive
-              pie chart visualization, tailored to your specific data science
-              needs.
+              Get a quick overview of key insights, metrics, and analytics in a
+              centralized interface. Stay informed and track performance effortlessly.
             </ColumnContent>
-            <Button variant="contained" color="secondary" size="large">
-              Learn More
-            </Button>
+            <Link href="/dashboard" passHref>
+              <Button variant="contained" color="secondary" size="large">
+                Go to Dashboard
+              </Button>
+            </Link>
           </Column>
 
+          {/* ML Predictor Card */}
           <Column>
             <IconWrapper>
               <svg
@@ -189,16 +192,19 @@ const About = () => {
                 />
               </svg>
             </IconWrapper>
-            <ColumnTitle variant="h5">Project Recommendations</ColumnTitle>
+            <ColumnTitle variant="h5">Machine Learning Predictor</ColumnTitle>
             <ColumnContent variant="body1">
-              Based on data-driven analysis, we recommend project paths that
-              help mitigate risks and optimize success.
+              Input the given fields and sit back as our Machine Learning Predictor generates and forecasts 
+              the direction your project is headed for you.
             </ColumnContent>
-            <Button variant="contained" color="primary" size="large">
-              Learn More
-            </Button>
+            <Link href="/predictor" passHref>
+              <Button variant="contained" color="primary" size="large">
+                Use Predictor
+              </Button>
+            </Link>
           </Column>
 
+          {/* Docs Card */}
           <Column>
             <IconWrapper>
               <svg
@@ -214,26 +220,23 @@ const About = () => {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth="2"
-                  d="M10 3v4a1 1 0 0 1-1 1H5m4 10v-2m3 2v-6m3 6v-3m4-11v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7.914a1 1 0 0 1 .293-.707l3.914-3.914A1 1 0 0 1 9.914 3H18a1 1 0 0 1 1 1Z"
+                  d="M10 3v4a1 1 0 0 1-1 1H5m4 10v-2m3 2v-6m3 6v-3m4-11v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7.914"
                 />
               </svg>
             </IconWrapper>
-            <ColumnTitle variant="h5">Machine Learning Insights</ColumnTitle>
+            <ColumnTitle variant="h5">Extensive Documentation</ColumnTitle>
             <ColumnContent variant="body1">
-              By leveraging the power of machine learning and predictive
-              analytics, we've identified key risks and recommended projects
-              that can optimize your data science initiatives.
+              Explore transparent data and the comprehensive technologies powering our project. 
+              Gain in-depth insights into our methodologies, frameworks, and system architecture.
             </ColumnContent>
-            <Button variant="contained" color="secondary" size="large">
-              Learn More
-            </Button>
+            <Link href="/docs" passHref>
+              <Button variant="contained" color="secondary" size="large">
+                Read Docs
+              </Button>
+            </Link>
           </Column>
         </ThreeColumnSection>
-        {/* Mission Section */}
-        <Mission
-          src="/missionimage.png" // Make sure this path is correct
-          title="Mission" // Ensure this title matches your content
-        />
+        <Mission src="/missionimage.png" title="Mission" />
       </Box>
     </div>
   );
