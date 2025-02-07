@@ -108,6 +108,12 @@ export default function Navbar() {
           <Link href="/dashboard" className="text-xl text-gray-800 hover:text-green-600 transition-colors">
             Dashboard
           </Link>
+          <Link href="/predictor" className="text-xl text-gray-800 hover:text-green-600 transition-colors">
+            ML Predictor
+          </Link>
+          <Link href="/docs" className="text-xl text-gray-800 hover:text-green-600 transition-colors">
+            Docs
+          </Link>
           <Link href="/contact" className="text-xl text-gray-800 hover:text-green-600 transition-colors">
             Contact Us
           </Link>

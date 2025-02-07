@@ -3,10 +3,9 @@
 import React from "react";
 import Link from "next/link";
 import "../globals.css";
-import { Typography, Button, Box } from "@mui/material";
-import { styled } from "@mui/system";
-import SectionHeader from "@/components/ui/SectionHeader";
-import Mission from "@/components/ui/Mission"; // Make sure the import path is correct
+import { Typography, Button, Box, useMediaQuery } from "@mui/material";
+import { styled, useTheme } from "@mui/system";
+import Mission from "@/components/ui/Mission"; // Ensure correct path
 
 const HeroSection = styled(Box)(({ theme }) => ({
   display: "flex",
@@ -17,7 +16,9 @@ const HeroSection = styled(Box)(({ theme }) => ({
   borderRadius: 12,
   width: "100%",
   [theme.breakpoints.down("md")]: {
-    flexDirection: "column", // Stack vertically on smaller screens
+    flexDirection: "column",
+    alignItems: "flex-start",
+    textAlign: "left",
     padding: theme.spacing(4),
   },
 }));
@@ -43,11 +44,18 @@ const HeroImage = styled(Box)(({ theme }) => ({
   height: 500,
   borderRadius: 12,
   width: "100%",
+  [theme.breakpoints.down("md")]: {
+    display: "none", // Hide image on smaller screens
+  },
 }));
 
 const HeroText = styled(Box)(({ theme }) => ({
   maxWidth: "50%",
   paddingRight: theme.spacing(4),
+  [theme.breakpoints.down("md")]: {
+    maxWidth: "100%",
+    paddingRight: 0,
+  },
 }));
 
 const ThreeColumnSection = styled(Box)(({ theme }) => ({
@@ -58,20 +66,6 @@ const ThreeColumnSection = styled(Box)(({ theme }) => ({
   margin: theme.spacing(4, "auto"),
   maxWidth: "1200px",
   position: "relative",
-  "&::before": {
-    content: '""',
-    position: "absolute",
-    top: 0,
-    left: "50%",
-    transform: "translateX(-50%)",
-    width: "100vw",
-    height: "100%",
-    backgroundImage: "url(/image1.png)",
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-    filter: "brightness(0.7) blur(8px)",
-    zIndex: -1,
-  },
   [theme.breakpoints.down("md")]: {
     flexDirection: "column",
   },
@@ -91,80 +85,52 @@ const Column = styled(Box)(({ theme }) => ({
   minHeight: "450px",
 }));
 
-const IconWrapper = styled(Box)(({ theme }) => ({
-  marginBottom: theme.spacing(2),
-  color: theme.palette.primary.main,
-  "& svg": {
-    width: 40,
-    height: 40,
-  },
-}));
-
 const ColumnTitle = styled(Typography)(({ theme }) => ({
   fontWeight: 700,
   textAlign: "center",
   marginBottom: theme.spacing(2),
 }));
 
-const ColumnContent = styled(Typography)(({ theme }) => ({
-  textAlign: "center",
-  flex: 1,
-  display: "flex",
-  alignItems: "center",
-}));
-
 const About = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+
   return (
     <div>
       {/* Hero Section */}
       <HeroWrapper>
         <HeroSection>
           <HeroText>
-            <Typography variant="h2" component="h1" gutterBottom>
+            <Typography
+              variant={isMobile ? "h4" : "h2"}
+              component="h1"
+              gutterBottom
+            >
               Carbon Credit Risk Project
             </Typography>
-            <Typography variant="h5" paragraph>
+            <Typography variant={isMobile ? "body1" : "h5"} paragraph>
               Experience the power of machine learning with templates that you
               can use for your project, turning complex data into actionable
               insights.
             </Typography>
-            <Button variant="contained" color="primary" size="large">
+            <Button variant="contained" color="primary" size={isMobile ? "medium" : "large"}>
               Learn More
             </Button>
           </HeroText>
-          <HeroImage />
+          {!isMobile && <HeroImage />}
         </HeroSection>
       </HeroWrapper>
 
+      {/* Three Column Section */}
       <Box sx={{ width: "100%" }}>
-        {" "}
-        {/* Replaced Container with Box */}
         <ThreeColumnSection>
           {/* Dashboard Card */}
           <Column>
-            <IconWrapper>
-              <svg
-                aria-hidden="true"
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M4 4.5V19a1 1 0 0 0 1 1h15M7 14l4-4 4 4 5-5m0 0h-3.207M20 9v3.207"
-                />
-              </svg>
-            </IconWrapper>
             <ColumnTitle variant="h5">Customisable Dashboard</ColumnTitle>
-            <ColumnContent variant="body1">
+            <Typography variant="body1" align="center">
               Get a quick overview of key insights, metrics, and analytics in a
               centralized interface. Stay informed and track performance effortlessly.
-            </ColumnContent>
+            </Typography>
             <Link href="/dashboard" passHref>
               <Button variant="contained" color="secondary" size="large">
                 Go to Dashboard
@@ -174,29 +140,11 @@ const About = () => {
 
           {/* ML Predictor Card */}
           <Column>
-            <IconWrapper>
-              <svg
-                aria-hidden="true"
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M15 4h3a1 1 0 0 1 1 1v15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h3m0 3h6m-3 5h3m-6 0h.01M12 16h3m-6 0h.01M10 3v4h4V3h-4Z"
-                />
-              </svg>
-            </IconWrapper>
             <ColumnTitle variant="h5">Machine Learning Predictor</ColumnTitle>
-            <ColumnContent variant="body1">
-              Input the given fields and sit back as our Machine Learning Predictor generates and forecasts 
-              the direction your project is headed for you.
-            </ColumnContent>
+            <Typography variant="body1" align="center">
+              Input the given fields and sit back as our Machine Learning Predictor
+              generates and forecasts the direction your project is headed for you.
+            </Typography>
             <Link href="/predictor" passHref>
               <Button variant="contained" color="primary" size="large">
                 Use Predictor
@@ -206,29 +154,12 @@ const About = () => {
 
           {/* Docs Card */}
           <Column>
-            <IconWrapper>
-              <svg
-                aria-hidden="true"
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M10 3v4a1 1 0 0 1-1 1H5m4 10v-2m3 2v-6m3 6v-3m4-11v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7.914"
-                />
-              </svg>
-            </IconWrapper>
             <ColumnTitle variant="h5">Extensive Documentation</ColumnTitle>
-            <ColumnContent variant="body1">
-              Explore transparent data and the comprehensive technologies powering our project. 
-              Gain in-depth insights into our methodologies, frameworks, and system architecture.
-            </ColumnContent>
+            <Typography variant="body1" align="center">
+              Explore transparent data and the comprehensive technologies powering
+              our project. Gain in-depth insights into our methodologies, frameworks,
+              and system architecture.
+            </Typography>
             <Link href="/docs" passHref>
               <Button variant="contained" color="secondary" size="large">
                 Read Docs
@@ -236,6 +167,8 @@ const About = () => {
             </Link>
           </Column>
         </ThreeColumnSection>
+
+        {/* Mission Section */}
         <Mission src="/missionimage.png" title="Mission" />
       </Box>
     </div>

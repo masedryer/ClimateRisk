@@ -1,26 +1,32 @@
 "use client"; // Ensure this is at the top for Client Component
 
 import React from "react";
-import { Box, Typography } from "@mui/material";
+import { Box, Typography, useMediaQuery } from "@mui/material";
+import { useTheme } from "@mui/system";
 
 const Mission = ({ src, title }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+
   return (
     <Box
       sx={{
         position: "relative",
         width: "100vw",
-        height: "100vh",
+        height: isMobile ? "auto" : "100vh",
         overflow: "hidden",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         textAlign: "center",
+        flexDirection: "column",
+        padding: isMobile ? "2em" : "4em",
       }}
     >
       {/* Background Image */}
       <Box
         component="img"
-        src={src || "/fallbackImage.png"} // Fallback image URL
+        src={src || "/fallbackImage.png"}
         alt={title || "Mission Image"}
         sx={{
           position: "absolute",
@@ -29,18 +35,21 @@ const Mission = ({ src, title }) => {
           width: "100%",
           height: "100%",
           objectFit: "cover",
-          filter: "blur(6px) brightness(0.5)", // Reduced blur for subtle effect
-          zIndex: -1, // Ensures it stays behind the text
+          filter: "blur(6px) brightness(0.5)",
+          zIndex: -1,
         }}
       />
 
       {/* Overlay Text */}
       <Box sx={{ color: "white", padding: "2em", maxWidth: "80%", margin: "0 auto" }}>
-        <Typography variant="h2" gutterBottom>
+        <Typography variant={isMobile ? "h4" : "h2"} gutterBottom>
           Our Mission
         </Typography>
-        <Typography variant="h6">
-        We are committed to empowering users with intelligent, data-driven solutions that enhance decision-making and streamline workflows. By integrating powerful analytics, machine learning insights, and comprehensive documentation, our platform simplifies complexity and unlocks new opportunities. Our goal is to create an intuitive, accessible, and efficient ecosystem where users can seamlessly interact with data, gain valuable predictions, and leverage well-documented resources to maximize their potential.
+        <Typography variant={isMobile ? "body1" : "h6"} paragraph>
+          We empower users with intelligent, data-driven solutions to enhance decision-making.
+        </Typography>
+        <Typography variant={isMobile ? "body1" : "h6"} paragraph>
+          Our platform integrates analytics, machine learning, and documentation to simplify complexity and unlock new opportunities.
         </Typography>
       </Box>
     </Box>

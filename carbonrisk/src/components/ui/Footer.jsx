@@ -15,11 +15,17 @@ const Footer = () => {
           <a href="/about" className="hover:text-gray-400">
             About Us
           </a>
-          <a href="/services" className="hover:text-gray-400">
-            Services
+          <a href="/dashboard" className="hover:text-gray-400">
+            Dashboard
+          </a>
+          <a href="/predictor" className="hover:text-gray-400">
+            ML Predictor
+          </a>
+          <a href="/docs" className="hover:text-gray-400">
+            Docs
           </a>
           <a href="/contact" className="hover:text-gray-400">
-            Contact
+            Contact Us
           </a>
         </div>
 
