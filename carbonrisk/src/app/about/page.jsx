@@ -1,5 +1,6 @@
 "use client"; // Ensure this is at the top for Client Component
 
+import { SpeedInsights } from "@vercel/speed-insights/next"
 import React from "react";
 import Link from "next/link";
 import "../globals.css";
@@ -167,10 +168,11 @@ const About = () => {
             </Link>
           </Column>
         </ThreeColumnSection>
-
+        
         {/* Mission Section */}
         <Mission src="/missionimage.png" title="Mission" />
       </Box>
+      <SpeedInsights />
     </div>
   );
 };
