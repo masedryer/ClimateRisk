@@ -1,8 +1,8 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { supabase } from './supabase';
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { supabase } from "./supabase";
 
 const AuthContext = createContext({});
 
@@ -13,46 +13,58 @@ export const AuthProvider = ({ children }) => {
     const router = useRouter();
 
     useEffect(() => {
-        const getSession = async () => {
-            const { data: { session }, error } = await supabase.auth.getSession();
-            setUser(session?.user ?? null);
+        if (typeof window === "undefined") return; // Prevent execution on server
+
+        const restoreSession = async () => {
+            setLoading(true);
+
+            const { data: { session } } = await supabase.auth.getSession();
+            const storedSession = JSON.parse(localStorage.getItem("supabase_session"));
+
             if (session?.user) {
+                console.log("Session found from Supabase:", session);
+                setUser(session.user);
+                localStorage.setItem("supabase_session", JSON.stringify(session));
                 await fetchUserProfile(session.user.id);
+            } else if (storedSession?.user) {
+                console.log("Restoring session from localStorage:", storedSession);
+                setUser(storedSession.user);
+                await fetchUserProfile(storedSession.user.id);
+            } else {
+                console.warn("No session found, user is logged out.");
+                setUser(null);
+                localStorage.removeItem("supabase_session");
             }
+
             setLoading(false);
         };
 
-        getSession();
+        restoreSession();
 
-        const { data: subscription } = supabase.auth.onAuthStateChange(async (event, session) => {
-            setUser(session?.user ?? null);
+        const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+            console.log("Auth Event:", event, session);
             if (session?.user) {
+                setUser(session.user);
+                localStorage.setItem("supabase_session", JSON.stringify(session));
                 await fetchUserProfile(session.user.id);
             } else {
-                setUserProfile(null);
+                setUser(null);
+                localStorage.removeItem("supabase_session");
             }
-
-            if (event === 'EMAIL_CONFIRMED') {
-                router.push('/dashboard');
-                router.refresh();
-            }
-
             setLoading(false);
         });
 
-        return () => subscription.unsubscribe();
+        return () => authListener.subscription.unsubscribe();
     }, []);
 
     const fetchUserProfile = async (userId) => {
         const { data, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', userId)
+            .from("profiles")
+            .select("*")
+            .eq("id", userId)
             .single();
 
-        if (!error && data) {
-            setUserProfile(data);
-        }
+        if (!error && data) setUserProfile(data);
     };
 
     const signUp = async (email, password, userData) => {
@@ -62,7 +74,7 @@ export const AuthProvider = ({ children }) => {
                 password,
                 options: {
                     data: userData,
-                    emailRedirectTo: `${window.location.origin}/auth/callback`
+                    emailRedirectTo: `${window.location.origin}/dashboard`
                 }
             });
 
@@ -70,7 +82,7 @@ export const AuthProvider = ({ children }) => {
 
             if (data.user) {
                 const { error: profileError } = await supabase
-                    .from('profiles')
+                    .from("profiles")
                     .insert([{
                         id: data.user.id,
                         email: email,
@@ -92,36 +104,25 @@ export const AuthProvider = ({ children }) => {
             throw error;
         }
     };
+
     const signInWithGoogle = async () => {
         try {
-            const { data, error } = await supabase.auth.signInWithOAuth({
-                provider: 'google',
+            const { error } = await supabase.auth.signInWithOAuth({
+                provider: "google",
                 options: {
                     queryParams: {
-                        access_type: 'offline',
-                        prompt: 'consent',
-                        client_id: '135263384467-n14u02ci5micadg7rcl3rohct90lq4p1.apps.googleusercontent.com'
+                        access_type: "offline",
+                        prompt: "consent",
                     },
                     redirectTo: `${window.location.origin}/dashboard`
                 }
-                
             });
-    
+
             if (error) throw error;
-    
-            if (data.session) {
-                setUser(data.session.user);
-                fetchUserProfile(data.session.user.id).then(() => {
-                    router.push('/dashboard');
-                    router.refresh();
-                });
-            }
-            return data;
         } catch (error) {
             throw error;
         }
     };
-    
 
     const signIn = async (email, password) => {
         try {
@@ -130,7 +131,7 @@ export const AuthProvider = ({ children }) => {
                 password
             });
             if (error) throw error;
-            router.push('/dashboard');
+            router.push("/dashboard");
             router.refresh();
             return data;
         } catch (error) {
@@ -142,10 +143,15 @@ export const AuthProvider = ({ children }) => {
         try {
             const { error } = await supabase.auth.signOut();
             if (error) throw error;
-            router.push('/login');
+            setUser(null);
+            setUserProfile(null);
+            if (typeof window !== "undefined") {
+                localStorage.removeItem("supabase_session");
+            }
+            router.push("/login");
             router.refresh();
         } catch (error) {
-            throw error;
+            console.error("Logout error:", error);
         }
     };
 
@@ -157,31 +163,30 @@ export const AuthProvider = ({ children }) => {
             if (error) throw error;
             return { success: true };
         } catch (error) {
-            console.error('Reset password error:', error);
+            console.error("Reset password error:", error);
             throw error;
         }
     };
 
-    const updatePassword = async (token, newPassword) => {
+    const updatePassword = async (newPassword) => {
         try {
-            const { error } = await supabase.auth.updateUser(token, { password: newPassword });
+            const { error } = await supabase.auth.updateUser({ password: newPassword });
             if (error) throw error;
-            router.push('/login?reset=success');
+            router.push("/login?reset=success");
             router.refresh();
         } catch (error) {
-            console.error('Update password error:', error);
+            console.error("Update password error:", error);
             throw error;
         }
     };
-    
 
     const resendVerificationEmail = async (email) => {
         try {
             const { error } = await supabase.auth.resend({
-                type: 'signup',
+                type: "signup",
                 email: email,
                 options: {
-                    emailRedirectTo: `${window.location.origin}/auth/callback`,
+                    emailRedirectTo: `${window.location.origin}/dashboard`,
                 }
             });
             if (error) throw error;
@@ -193,9 +198,9 @@ export const AuthProvider = ({ children }) => {
     const updateProfile = async (updates) => {
         try {
             const { error } = await supabase
-                .from('profiles')
+                .from("profiles")
                 .update(updates)
-                .eq('id', user.id);
+                .eq("id", user.id);
 
             if (error) throw error;
             await fetchUserProfile(user.id);
@@ -227,7 +232,7 @@ export const AuthProvider = ({ children }) => {
 export const useAuth = () => {
     const context = useContext(AuthContext);
     if (!context) {
-        throw new Error('useAuth must be used within an AuthProvider');
+        throw new Error("useAuth must be used within an AuthProvider");
     }
     return context;
 };
