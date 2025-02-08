@@ -1,4 +1,4 @@
-"use client"; // Ensure this is at the top for Client Component
+"use client"; // Ensure this is at the top for Client Components 
 
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import React from "react";
