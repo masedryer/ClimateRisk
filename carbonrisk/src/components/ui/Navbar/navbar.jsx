@@ -4,6 +4,8 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/AuthContext";
 import { supabase } from "@/lib/supabase";
+import Image from 'next/image';
+import Link from 'next/link';
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -52,9 +54,15 @@ export default function Navbar() {
 
   return (
     <header className="bg-gray-100 shadow-md py-3 px-8 w-full flex justify-between items-center sticky top-0 z-50">
-      <Link href="/" className="text-4xl font-bold text-gray-800 hover:text-green-600 transition-colors">
-        Lemonject
-      </Link>
+  <Link href="/">
+    <Image 
+      src="/Lemonject.png" 
+      alt="Lemonject Logo" 
+      width={150}  // Adjust width as needed
+      height={50}  // Adjust height as needed
+      className="hover:opacity-80 transition-opacity"
+    />
+  </Link>
 
       <div className="hidden md:flex space-x-6 justify-center w-full">
         <Link href="/about" className="text-xl text-gray-800 hover:text-green-600 transition-colors">
