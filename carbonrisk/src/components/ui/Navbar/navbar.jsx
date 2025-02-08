@@ -58,8 +58,9 @@ export default function Navbar() {
       <Image 
         src="/Lemonjectupdate.png" 
         alt="Lemonject Logo" 
-  
-     className="max-w-[80px] h-auto hover:opacity-80 transition-opacity"
+        width={30}  
+        height={10}  
+        className="hover:opacity-80 transition-opacity"
       />
     </Link>
 
