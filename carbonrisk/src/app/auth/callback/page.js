@@ -1,23 +1,26 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import supabase from "@/lib/supabase.js"; // Import the single instance of Supabase client
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL, 
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
 
 export default function AuthCallback() {
   const router = useRouter();
 
   useEffect(() => {
     const handleAuth = async () => {
-      // Force refresh session to avoid stale data issues
-      await supabase.auth.refreshSession();
-      const { data: { session }, error } = await supabase.auth.getSession();
-
-      if (error || !session) {
-        console.error("Authentication error:", error);
-        router.push("/login");
+      const { error } = await supabase.auth.getSession();
+      
+      if (error) {
+        console.error('Authentication error:', error);
+        router.push('/login');
       } else {
-        router.push("/dashboard");
+        router.push('/dashboard');
       }
     };
 
