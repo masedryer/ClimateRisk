@@ -7,7 +7,7 @@ const Footer = () => {
       <div className="container mx-auto flex flex-col items-center justify-between sm:flex-row">
         {/* Logo or Brand */}
         <div className="mb-4 sm:mb-0">
-          <h1 className="text-xl font-bold">YourBrand</h1>
+          <h1 className="text-xl font-bold">Lemonject</h1>
         </div>
 
         {/* Links Section */}
@@ -60,7 +60,7 @@ const Footer = () => {
 
       {/* Copyright Section */}
       <div className="mt-6 text-center text-sm text-gray-400">
-        &copy; {new Date().getFullYear()} YourBrand. All rights reserved.
+        &copy; {new Date().getFullYear()} Lemonject. All rights reserved.
       </div>
     </footer>
   );
