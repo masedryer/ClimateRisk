@@ -114,9 +114,11 @@ const About = () => {
               can use for your project, turning complex data into actionable
               insights.
             </Typography>
+            <Link href="/docs" passHref>
             <Button variant="contained" color="primary" size={isMobile ? "medium" : "large"}>
               Learn More
             </Button>
+            </Link>
           </HeroText>
           {!isMobile && <HeroImage />}
         </HeroSection>
