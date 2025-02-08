@@ -56,7 +56,7 @@ export default function Navbar() {
     <header className="bg-gray-100 shadow-md py-3 px-8 w-full flex justify-between items-center sticky top-0 z-50">
   <Link href="/">
     <Image 
-      src="/Lemonject.png" 
+      src="/Lemonjectupdate.png" 
       alt="Lemonject Logo" 
       width={150}  // Adjust width as needed
       height={50}  // Adjust height as needed
