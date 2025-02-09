@@ -23,6 +23,7 @@ export const AuthProvider = ({ children }) => {
         };
 
         getSession();
+        
 
         const { data: subscription } = supabase.auth.onAuthStateChange(async (event, session) => {
             setUser(session?.user ?? null);
