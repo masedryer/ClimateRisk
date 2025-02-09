@@ -1,3 +1,18 @@
+// supabase.js - Initialization of Supabase client
+import { createClient } from "@supabase/supabase-js";
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+export const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+  },
+});
+
+// AuthProvider.js - Provides authentication context and functionalities
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
@@ -13,6 +28,7 @@ export const AuthProvider = ({ children }) => {
     const router = useRouter();
 
     useEffect(() => {
+        // Initial check for an existing session
         const getSession = async () => {
             const { data: { session }, error } = await supabase.auth.getSession();
             setUser(session?.user ?? null);
@@ -23,8 +39,8 @@ export const AuthProvider = ({ children }) => {
         };
 
         getSession();
-        
 
+        // Subscription to auth state changes
         const { data: subscription } = supabase.auth.onAuthStateChange(async (event, session) => {
             setUser(session?.user ?? null);
             if (session?.user) {
@@ -41,9 +57,27 @@ export const AuthProvider = ({ children }) => {
             setLoading(false);
         });
 
-        return () => subscription.unsubscribe();
+        // Listen to window focus event to check session validity
+        const handleFocus = () => {
+            supabase.auth.getSession().then(({ data: { session }, error }) => {
+                if (session) {
+                    setUser(session.user);
+                    fetchUserProfile(session.user.id);
+                } else {
+                    console.log("Session not found, user might need to re-login.");
+                }
+            });
+        };
+
+        window.addEventListener('focus', handleFocus);
+
+        return () => {
+            subscription.unsubscribe();
+            window.removeEventListener('focus', handleFocus);
+        };
     }, []);
 
+    // Function to fetch user profile from the database
     const fetchUserProfile = async (userId) => {
         const { data, error } = await supabase
             .from('profiles')
