@@ -1,4 +1,3 @@
-// AuthContext.js
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
@@ -14,60 +13,23 @@ export const AuthProvider = ({ children }) => {
     const router = useRouter();
 
     useEffect(() => {
-        // Initialize session from local storage if available
-        const savedSession = localStorage.getItem('supabase.auth.token');
-        if (savedSession) {
-            try {
-                const session = JSON.parse(savedSession);
-                if (session?.currentSession?.access_token) {
-                    supabase.auth.setSession({
-                        access_token: session.currentSession.access_token,
-                        refresh_token: session.currentSession.refresh_token
-                    });
-                }
-            } catch (error) {
-                console.error('Error restoring session:', error);
-            }
-        }
-
-        // Get initial session
         const getSession = async () => {
-            try {
-                const { data: { session }, error } = await supabase.auth.getSession();
-                if (error) throw error;
-                
-                if (session) {
-                    setUser(session.user);
-                    await fetchUserProfile(session.user.id);
-                    localStorage.setItem('supabase.auth.token', JSON.stringify({
-                        currentSession: session
-                    }));
-                }
-            } catch (error) {
-                console.error('Session retrieval error:', error);
-            } finally {
-                setLoading(false);
+            const { data: { session }, error } = await supabase.auth.getSession();
+            setUser(session?.user ?? null);
+            if (session?.user) {
+                await fetchUserProfile(session.user.id);
             }
+            setLoading(false);
         };
 
         getSession();
 
-        // Auth state change listener
         const { data: subscription } = supabase.auth.onAuthStateChange(async (event, session) => {
-            console.log('Auth state changed:', event, session?.user?.id);
-            
-            if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-                setUser(session?.user ?? null);
-                if (session?.user) {
-                    await fetchUserProfile(session.user.id);
-                    localStorage.setItem('supabase.auth.token', JSON.stringify({
-                        currentSession: session
-                    }));
-                }
-            } else if (event === 'SIGNED_OUT') {
-                setUser(null);
+            setUser(session?.user ?? null);
+            if (session?.user) {
+                await fetchUserProfile(session.user.id);
+            } else {
                 setUserProfile(null);
-                localStorage.removeItem('supabase.auth.token');
             }
 
             if (event === 'EMAIL_CONFIRMED') {
@@ -78,46 +40,18 @@ export const AuthProvider = ({ children }) => {
             setLoading(false);
         });
 
-        // Periodic session refresh
-        const refreshInterval = setInterval(async () => {
-            const { data: { session }, error } = await supabase.auth.getSession();
-            if (session && !error) {
-                setUser(session.user);
-                await fetchUserProfile(session.user.id);
-            }
-        }, 1800000); // 30 minutes
-
-        // Error handler
-        const handleError = async (error) => {
-            if (error?.message?.includes('JWT expired')) {
-                await supabase.auth.refreshSession();
-            }
-        };
-
-        supabase.auth.onError(handleError);
-
-        return () => {
-            subscription?.unsubscribe();
-            clearInterval(refreshInterval);
-        };
+        return () => subscription.unsubscribe();
     }, []);
 
     const fetchUserProfile = async (userId) => {
-        if (!userId) return;
-        
-        try {
-            const { data, error } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', userId)
-                .single();
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', userId)
+            .single();
 
-            if (error) throw error;
-            if (data) {
-                setUserProfile(data);
-            }
-        } catch (error) {
-            console.error('Error fetching user profile:', error);
+        if (!error && data) {
+            setUserProfile(data);
         }
     };
 
