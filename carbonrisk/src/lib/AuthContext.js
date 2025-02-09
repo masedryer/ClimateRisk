@@ -57,6 +57,22 @@ export const AuthProvider = ({ children }) => {
 
     const signUp = async (email, password, userData) => {
         try {
+            // Check if email already exists
+            const { data: existingUser, error: emailCheckError } = await supabase
+                .from('profiles')
+                .select('id')
+                .eq('email', email)
+                .single();
+    
+            if (existingUser) {
+                throw new Error('This email is already in use. Please use a different email.');
+            }
+    
+            if (emailCheckError && emailCheckError.code !== 'PGRST116') {
+                throw emailCheckError; // Throw only if it's not a "no rows found" error
+            }
+    
+            // Proceed with signup if email is not found
             const { data, error } = await supabase.auth.signUp({
                 email,
                 password,
@@ -65,9 +81,9 @@ export const AuthProvider = ({ children }) => {
                     emailRedirectTo: `${window.location.origin}/auth/callback`
                 }
             });
-
+    
             if (error) throw error;
-
+    
             if (data.user) {
                 const { error: profileError } = await supabase
                     .from('profiles')
@@ -83,15 +99,16 @@ export const AuthProvider = ({ children }) => {
                         updated_at: new Date().toISOString(),
                         email_verified: false
                     }]);
-
+    
                 if (profileError) throw profileError;
             }
-
+    
             return data;
         } catch (error) {
             throw error;
         }
     };
+    
     const signInWithGoogle = async () => {
         try {
             const { data, error } = await supabase.auth.signInWithOAuth({
