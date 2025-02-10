@@ -107,7 +107,7 @@ const About = () => {
               component="h1"
               gutterBottom
             >
-              Carbon Credit Risk Project
+              Climate Risk Project
             </Typography>
             <Typography variant={isMobile ? "body1" : "h5"} paragraph>
               Experience the power of machine learning with templates that you
